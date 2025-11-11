@@ -80,7 +80,91 @@ const DailyUsageValidator = {
         return 0;
     },
     
-    // 计算场景中所有配方的累计用量
+    // 计算单个场景中所有配方的累计用量
+    calculateScenarioDailyUsage(scenario) {
+        if (!scenario || !scenario.timeline) {
+            return { total: 0, formulas: [], warnings: [], scenarioName: scenario?.name || '未知场景' };
+        }
+        
+        // 获取配方数据库（支持多种来源）
+        const formulaDB = typeof FORMULA_DATABASE !== 'undefined' 
+            ? FORMULA_DATABASE 
+            : (typeof window !== 'undefined' && window.FORMULA_DATABASE 
+                ? window.FORMULA_DATABASE 
+                : {});
+        
+        if (Object.keys(formulaDB).length === 0) {
+            console.warn('DailyUsageValidator: FORMULA_DATABASE not found');
+            return { total: 0, formulas: [], warnings: [], scenarioName: scenario?.name || '未知场景' };
+        }
+        
+        const formulaUsageMap = new Map(); // 配方ID -> 用量
+        const formulaDetails = []; // 配方详情列表
+        
+        // 遍历场景的时间线
+        scenario.timeline.forEach(timelineItem => {
+            if (timelineItem.formulas) {
+                timelineItem.formulas.forEach(formulaData => {
+                    const formulaId = formulaData.formulaId;
+                    
+                    // 避免重复计算同一配方
+                    if (!formulaUsageMap.has(formulaId)) {
+                        const formula = formulaDB[formulaId];
+                        if (formula) {
+                            const amount = this.getFormulaDailyAmount(formula);
+                            formulaUsageMap.set(formulaId, amount);
+                            formulaDetails.push({
+                                id: formulaId,
+                                name: formula.name,
+                                amount: amount,
+                                mediumType: this.getFormulaMediumType(formula)
+                            });
+                        }
+                    }
+                });
+            }
+        });
+        
+        // 计算总量
+        const total = Array.from(formulaUsageMap.values()).reduce((sum, val) => sum + val, 0);
+        
+        // 只计算皮肤接触的用量
+        // 排除：扩香(diffuser)、乙醇喷雾(alcohol-spray)
+        // 包含：护手霜、身体乳、纯露、纯露喷雾、基础油、其他喷雾等
+        const skinContactTotal = formulaDetails
+            .filter(f => {
+                const mediumType = f.mediumType || 'base-oil';
+                // 排除不计入皮肤接触量的介质类型
+                return mediumType !== 'diffuser' && mediumType !== 'alcohol-spray';
+            })
+            .reduce((sum, f) => sum + f.amount, 0);
+        
+        // 生成警告信息（基于皮肤接触总量）
+        const warnings = [];
+        if (skinContactTotal > this.DAILY_SAFETY_LIMIT) {
+            warnings.push({
+                level: 'danger',
+                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(2)}ml 超过安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)！请减少配方使用量。`
+            });
+        } else if (skinContactTotal > this.WARNING_THRESHOLD) {
+            warnings.push({
+                level: 'warning',
+                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(2)}ml 接近安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)，请谨慎使用。`
+            });
+        }
+        
+        return {
+            total: total,
+            skinContactTotal: skinContactTotal,
+            formulas: formulaDetails,
+            warnings: warnings,
+            isSafe: skinContactTotal <= this.DAILY_SAFETY_LIMIT,
+            isWarning: skinContactTotal > this.WARNING_THRESHOLD && skinContactTotal <= this.DAILY_SAFETY_LIMIT,
+            scenarioName: scenario?.name || '未知场景'
+        };
+    },
+    
+    // 计算场景中所有配方的累计用量（保留原函数以兼容）
     calculateTotalDailyUsage(scenarios) {
         if (!scenarios || !scenarios.scenarios) {
             return { total: 0, formulas: [], warnings: [] };
@@ -242,13 +326,13 @@ const DailyUsageValidator = {
         return 'base-oil';
     },
     
-    // 生成安全评估HTML
-    generateSafetyAssessmentHTML(usageData) {
+    // 生成单个场景的安全评估HTML卡片
+    generateSafetyAssessmentCard(usageData, scenarioIndex = 0) {
         if (!usageData || usageData.formulas.length === 0) {
             return '';
         }
         
-        const { total, formulas, warnings, isSafe, isWarning } = usageData;
+        const { total, formulas, warnings, isSafe, isWarning, scenarioName } = usageData;
         
         // 按介质类型分组
         const formulasByMedium = {};
@@ -269,16 +353,16 @@ const DailyUsageValidator = {
         // 使用计算好的皮肤接触总量
         const skinContactTotal = usageData.skinContactTotal || (total - (mediumTotals['diffuser'] || 0) - (mediumTotals['alcohol-spray'] || 0));
         
-        // 状态样式
+        // 状态样式（基于皮肤接触总量）
         let statusClass = 'safe';
         let statusText = '安全范围';
         let statusIcon = '✓';
         
-        if (total > this.DAILY_SAFETY_LIMIT) {
+        if (skinContactTotal > this.DAILY_SAFETY_LIMIT) {
             statusClass = 'danger';
             statusText = '超出上限';
             statusIcon = '⚠';
-        } else if (isWarning) {
+        } else if (skinContactTotal > this.WARNING_THRESHOLD || isWarning) {
             statusClass = 'warning';
             statusText = '接近上限';
             statusIcon = '⚠';
@@ -290,12 +374,14 @@ const DailyUsageValidator = {
                 border: 2px solid ${statusClass === 'danger' ? '#dc2626' : statusClass === 'warning' ? '#f59e0b' : '#10b981'};
                 border-radius: 12px;
                 padding: 20px;
-                margin: 30px 0;
+                margin: 0;
+                height: 100%;
+                box-sizing: border-box;
             ">
                 <div style="display: flex; align-items: center; margin-bottom: 15px;">
                     <span style="font-size: 24px; margin-right: 10px;">${statusIcon}</span>
                     <h3 style="margin: 0; color: ${statusClass === 'danger' ? '#991b1b' : statusClass === 'warning' ? '#92400e' : '#065f46'};">
-                        每日精油用量安全评估
+                        ${scenarioName ? `场景 ${scenarioIndex + 1}: ${scenarioName}` : '每日精油用量安全评估'}
                     </h3>
                 </div>
                 
@@ -396,6 +482,49 @@ const DailyUsageValidator = {
         `;
         
         return html;
+    },
+    
+    // 生成安全评估HTML（保留原函数以兼容）
+    generateSafetyAssessmentHTML(usageData) {
+        return this.generateSafetyAssessmentCard(usageData, 0);
+    },
+    
+    // 生成多个场景的安全评估HTML（平行显示）
+    generateMultipleSafetyAssessmentsHTML(scenarios) {
+        if (!scenarios || !scenarios.scenarios || scenarios.scenarios.length === 0) {
+            return '';
+        }
+        
+        // 为每个场景计算用量
+        const assessments = scenarios.scenarios.map((scenario, index) => {
+            const usageData = this.calculateScenarioDailyUsage(scenario);
+            return {
+                usageData,
+                index
+            };
+        }).filter(a => a.usageData && a.usageData.formulas.length > 0);
+        
+        if (assessments.length === 0) {
+            return '';
+        }
+        
+        // 生成平行显示的卡片容器
+        const cardsHTML = assessments.map(a => 
+            this.generateSafetyAssessmentCard(a.usageData, a.index)
+        ).join('');
+        
+        return `
+            <div class="safety-assessments-container" style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+                width: 100%;
+                box-sizing: border-box;
+            ">
+                ${cardsHTML}
+            </div>
+        `;
     },
     
     // 获取介质名称

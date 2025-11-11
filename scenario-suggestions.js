@@ -37,13 +37,13 @@ function renderFormulaCard(formulaData, formula) {
     return `
         <a href="formula-detail.html?id=${formula.id}" class="formula-card">
             <div class="formula-card-header">
-                <div class="formula-card-name">${formula.name}</div>
+                <div class="formula-card-name">${formula.name || '未命名配方'}</div>
                 <span class="usage-type-badge">${usageType}</span>
             </div>
             ${formulaData.reason ? `<div class="formula-card-reason">${formulaData.reason}</div>` : ''}
             ${oils.length > 0 ? `
                 <div class="formula-card-tags">
-                    ${oils.map(oil => `<a href="oil-detail.html?oil=${encodeURIComponent(oil)}" onclick="event.stopPropagation();" class="oil-tag" style="text-decoration: none; display: inline-block;">${oil}</a>`).join('')}
+                    ${oils.map(oil => `<a href="oil-detail.html?oil=${encodeURIComponent(oil)}" onclick="event.stopPropagation();" class="oil-tag">${oil}</a>`).join('')}
                 </div>
             ` : ''}
         </a>
@@ -107,18 +107,25 @@ function renderScenarios(scenarios) {
         return;
     }
     
+    // 计算并显示每日用量安全评估（每个场景分别计算，平行显示）
+    let safetyAssessmentHTML = '';
+    if (typeof DailyUsageValidator !== 'undefined') {
+        safetyAssessmentHTML = DailyUsageValidator.generateMultipleSafetyAssessmentsHTML(scenarios);
+    }
+    
+    // 渲染场景到并排的网格容器中
     const scenariosHTML = scenarios.scenarios.map((scenario, index) => 
         renderScenario(scenario, index)
     ).filter(html => html).join('');
     
-    // 计算并显示每日用量安全评估
-    let safetyAssessmentHTML = '';
-    if (typeof DailyUsageValidator !== 'undefined') {
-        const usageData = DailyUsageValidator.calculateTotalDailyUsage(scenarios);
-        safetyAssessmentHTML = DailyUsageValidator.generateSafetyAssessmentHTML(usageData);
-    }
+    // 将场景放入并排网格容器
+    const scenariosGridHTML = scenariosHTML ? `
+        <div class="scenarios-grid">
+            ${scenariosHTML}
+        </div>
+    ` : '';
     
-    container.innerHTML = safetyAssessmentHTML + scenariosHTML;
+    container.innerHTML = safetyAssessmentHTML + scenariosGridHTML;
 }
 
 // 显示错误状态
