@@ -207,7 +207,8 @@
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
 
         .fixed-nav nav a {
@@ -249,6 +250,28 @@
         
         .fixed-nav nav a[aria-current="page"]::after {
             width: 80%;
+        }
+        
+        /* 导航栏用户信息样式（与登录链接保持一致） */
+        .fixed-nav nav #navUserInfo {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .fixed-nav nav #navLoginLink,
+        .fixed-nav nav #navUserInfo {
+            min-width: 60px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         /* 移动端菜单按钮 */
@@ -801,6 +824,13 @@
             
             .fixed-nav nav a::after {
                 display: none;
+            }
+            
+            /* 移动端：登录链接和用户信息保持在同一位置 */
+            .fixed-nav nav #navLoginLink,
+            .fixed-nav nav #navUserInfo {
+                min-width: auto;
+                text-align: left;
             }
 
             .menu-toggle {

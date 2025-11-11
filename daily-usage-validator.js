@@ -56,28 +56,152 @@ const DailyUsageValidator = {
         return 0;
     },
     
-    // 从配方中提取每日用量
+    // 从配方中提取总精油量（ml）
+    getFormulaTotalOilAmount(formula) {
+        if (!formula) return 0;
+        
+        let totalMl = 0;
+        
+        if (formula.ingredients && Array.isArray(formula.ingredients)) {
+            formula.ingredients.forEach(ing => {
+                if (ing.name && ing.name.includes('精油') && ing.amount) {
+                    // 解析精油用量（可能是滴数或ml）
+                    const amountStr = ing.amount.toString();
+                    
+                    // 如果是滴数，转换为ml（1滴 ≈ 0.05ml）
+                    const dropsMatch = amountStr.match(/(\d+)\s*滴/);
+                    if (dropsMatch) {
+                        const drops = parseFloat(dropsMatch[1]);
+                        totalMl += drops * 0.05;
+                    } else {
+                        // 尝试直接解析ml
+                        const mlMatch = amountStr.match(/(\d+\.?\d*)\s*ml/);
+                        if (mlMatch) {
+                            totalMl += parseFloat(mlMatch[1]);
+                        }
+                    }
+                }
+            });
+        }
+        
+        return totalMl;
+    },
+    
+    // 根据介质类型和总量计算使用天数
+    calculateUsageDays(mediumType, baseAmount) {
+        if (!baseAmount || baseAmount <= 0) return 1;
+        
+        switch (mediumType) {
+            case 'handcream':
+                // 护手霜：50g，使用周期约1个月（30天）
+                return Math.max(30, Math.round(baseAmount / 50 * 30));
+                
+            case 'bodylotion':
+                // 身体乳：100-200g，使用周期约2-3个月（60-90天）
+                return Math.max(60, Math.round(baseAmount / 150 * 75));
+                
+            case 'base-oil':
+                // 基础油（按摩油）：30-100ml，使用周期约3-6个月（90-180天）
+                // 基础油（滚珠）：10-30ml，使用周期约1-2个月（30-60天）
+                if (baseAmount < 30) {
+                    return Math.max(30, Math.round(baseAmount / 20 * 45));
+                } else {
+                    return Math.max(90, Math.round(baseAmount / 65 * 135));
+                }
+                
+            case 'footbath':
+                // 泡脚/泡澡：每次现调，单次使用
+                return 1;
+                
+            case 'spray':
+            case 'rosewater-spray':
+                // 喷雾（水基）：30-100ml，使用周期约1-2个月（30-60天）
+                return Math.max(30, Math.round(baseAmount / 65 * 45));
+                
+            case 'rosewater':
+                // 玫瑰水/纯露：50-200ml，使用周期约1个月（30天）
+                return Math.max(30, Math.round(baseAmount / 125 * 30));
+                
+            case 'diffuser':
+                // 扩香：单次使用，不计入皮肤接触量
+                return 1;
+                
+            case 'alcohol-spray':
+                // 乙醇喷雾：不计入皮肤接触量
+                return 1;
+                
+            default:
+                // 默认：按基础油计算
+                return Math.max(90, Math.round(baseAmount / 65 * 135));
+        }
+    },
+    
+    // 从配方中提取基底总量（g或ml）
+    getFormulaBaseAmount(formula) {
+        if (!formula || !formula.ingredients) return 50; // 默认50
+        
+        let baseAmount = 0;
+        
+        formula.ingredients.forEach(ing => {
+            if (ing.name && !ing.name.includes('精油')) {
+                // 提取基底用量
+                const amountStr = ing.amount ? ing.amount.toString() : '';
+                const gMatch = amountStr.match(/(\d+)\s*g/);
+                const mlMatch = amountStr.match(/(\d+)\s*ml/);
+                
+                if (gMatch) {
+                    baseAmount += parseFloat(gMatch[1]);
+                } else if (mlMatch) {
+                    baseAmount += parseFloat(mlMatch[1]);
+                }
+            }
+        });
+        
+        return baseAmount > 0 ? baseAmount : 50; // 如果找不到，使用默认值
+    },
+    
+    // 从配方中提取每日用量（根据使用周期计算）
+    // 重要：护手霜、身体乳等配方不会在一天内使用完，需要根据使用周期计算每日用量
+    // 扩香和乙醇喷雾不直接接触皮肤，不计入皮肤接触量
     getFormulaDailyAmount(formula) {
         if (!formula) return 0;
         
-        // 优先使用dailyAmount字段
+        // 获取介质类型
+        const mediumType = this.getFormulaMediumType(formula);
+        
+        // 扩香和乙醇喷雾不计入皮肤接触量，直接返回0
+        if (mediumType === 'diffuser' || mediumType === 'alcohol-spray') {
+            return 0;
+        }
+        
+        // 优先使用dailyAmount字段（如果配方中已经明确标注了每日用量）
         if (formula.dailyAmount) {
-            return this.parseDailyAmount(formula.dailyAmount);
+            const parsed = this.parseDailyAmount(formula.dailyAmount);
+            // 如果解析成功且不是"不计入"，直接返回（假设已经是每日用量）
+            if (parsed > 0) {
+                return parsed;
+            }
         }
         
-        // 如果没有dailyAmount，尝试从ingredients计算
-        if (formula.ingredients) {
-            let totalMl = 0;
-            formula.ingredients.forEach(ing => {
-                if (ing.name && ing.name.includes('精油') && ing.amount) {
-                    const ml = this.parseDailyAmount(ing.amount);
-                    totalMl += ml;
-                }
-            });
-            return totalMl;
+        // 如果没有dailyAmount字段，需要从总精油量和使用周期计算每日用量
+        // 计算总精油量（从配方中的所有精油成分提取）
+        const totalOilMl = this.getFormulaTotalOilAmount(formula);
+        if (totalOilMl <= 0) {
+            return 0;
         }
         
-        return 0;
+        // 获取基底总量（用于计算使用周期）
+        const baseAmount = this.getFormulaBaseAmount(formula);
+        
+        // 根据介质类型和基底总量计算使用天数
+        // 例如：护手霜50g使用约30天，身体乳150g使用约75天
+        const usageDays = this.calculateUsageDays(mediumType, baseAmount);
+        
+        // 每日用量 = 总精油量 / 使用天数
+        // 例如：总精油量0.3ml，使用30天，每日用量 = 0.3 / 30 = 0.01ml
+        const dailyMl = usageDays > 0 ? totalOilMl / usageDays : totalOilMl;
+        
+        return dailyMl;
     },
     
     // 计算单个场景中所有配方的累计用量
@@ -125,16 +249,19 @@ const DailyUsageValidator = {
             }
         });
         
-        // 计算总量
+        // 计算总量（包括所有配方，用于显示）
         const total = Array.from(formulaUsageMap.values()).reduce((sum, val) => sum + val, 0);
         
-        // 只计算皮肤接触的用量
-        // 排除：扩香(diffuser)、乙醇喷雾(alcohol-spray)
+        // 只计算皮肤接触的用量（用于安全评估）
+        // 注意：getFormulaDailyAmount 已经将扩香和乙醇喷雾的用量设为0
+        // 但这里再次过滤以确保安全（双重检查）
+        // 排除：扩香(diffuser)、乙醇喷雾(alcohol-spray) - 这些不直接接触皮肤
         // 包含：护手霜、身体乳、纯露、纯露喷雾、基础油、其他喷雾等
         const skinContactTotal = formulaDetails
             .filter(f => {
                 const mediumType = f.mediumType || 'base-oil';
                 // 排除不计入皮肤接触量的介质类型
+                // 扩香和乙醇喷雾不直接接触皮肤，不计入每日用量
                 return mediumType !== 'diffuser' && mediumType !== 'alcohol-spray';
             })
             .reduce((sum, f) => sum + f.amount, 0);
@@ -144,12 +271,12 @@ const DailyUsageValidator = {
         if (skinContactTotal > this.DAILY_SAFETY_LIMIT) {
             warnings.push({
                 level: 'danger',
-                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(2)}ml 超过安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)！请减少配方使用量。`
+                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(3)}ml 超过安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)！请减少配方使用量。`
             });
         } else if (skinContactTotal > this.WARNING_THRESHOLD) {
             warnings.push({
                 level: 'warning',
-                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(2)}ml 接近安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)，请谨慎使用。`
+                message: `每日皮肤接触精油用量 ${skinContactTotal.toFixed(3)}ml 接近安全上限(≤${this.DAILY_SAFETY_LIMIT}ml)，请谨慎使用。`
             });
         }
         
