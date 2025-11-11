@@ -9,6 +9,153 @@ const USAGE_TYPE_MAP = {
     'spray': '喷雾'
 };
 
+// 生成降级场景建议（基于规则，不依赖AI）
+function generateFallbackScenarios(questionnaireData) {
+    if (!questionnaireData || typeof FORMULA_DATABASE === 'undefined') {
+        return null;
+    }
+    
+    const usageTypes = questionnaireData.usage || [];
+    if (usageTypes.length === 0) {
+        return null;
+    }
+    
+    // 使用规则匹配系统获取推荐配方
+    if (typeof calculateFormulaScores === 'undefined') {
+        return null;
+    }
+    
+    const scores = calculateFormulaScores(questionnaireData);
+    const sortedFormulas = Object.entries(scores)
+        .filter(([_, score]) => score > 0)
+        .sort(([_, a], [__, b]) => b - a)
+        .slice(0, 10)
+        .map(([formulaId]) => FORMULA_DATABASE[formulaId])
+        .filter(f => f);
+    
+    if (sortedFormulas.length === 0) {
+        return null;
+    }
+    
+    // 按使用方式分组
+    const formulasByUsage = {};
+    sortedFormulas.forEach(formula => {
+        const name = (formula.name || '').toLowerCase();
+        const subtitle = (formula.subtitle || '').toLowerCase();
+        const text = name + ' ' + subtitle;
+        
+        let usageType = '';
+        if (text.includes('护手霜') || text.includes('handcream')) usageType = 'handcream';
+        else if (text.includes('身体乳') || text.includes('bodylotion')) usageType = 'bodylotion';
+        else if (text.includes('泡脚') || text.includes('泡澡') || text.includes('footbath')) usageType = 'footbath';
+        else if (text.includes('扩香') || text.includes('diffuser')) usageType = 'diffuser';
+        else if (text.includes('喷雾') || text.includes('spray')) usageType = 'spray';
+        
+        if (usageType && usageTypes.includes(usageType)) {
+            if (!formulasByUsage[usageType]) {
+                formulasByUsage[usageType] = [];
+            }
+            formulasByUsage[usageType].push(formula);
+        }
+    });
+    
+    // 生成两个简化场景
+    const scenarios = [];
+    
+    // 场景1：工作日场景
+    const scenario1 = {
+        name: '工作日场景',
+        description: '适合工作日使用的简化方案，重点改善工作压力和疲劳',
+        timeline: []
+    };
+    
+    // 添加早晨时间点
+    if (formulasByUsage.handcream && formulasByUsage.handcream.length > 0) {
+        scenario1.timeline.push({
+            time: '08:00',
+            title: '起床后',
+            formulas: [{
+                formulaId: formulasByUsage.handcream[0].id,
+                usageType: 'handcream',
+                reason: '早晨使用，提神醒脑，缓解工作压力'
+            }]
+        });
+    }
+    
+    // 添加工作时段
+    if (formulasByUsage.diffuser && formulasByUsage.diffuser.length > 0) {
+        scenario1.timeline.push({
+            time: '10:00',
+            title: '工作时段',
+            formulas: [{
+                formulaId: formulasByUsage.diffuser[0].id,
+                usageType: 'diffuser',
+                reason: '工作时段扩香，提升专注力和工作效率'
+            }]
+        });
+    }
+    
+    // 添加晚上时间点
+    if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 0) {
+        scenario1.timeline.push({
+            time: '20:00',
+            title: '睡前',
+            formulas: [{
+                formulaId: formulasByUsage.bodylotion[0].id,
+                usageType: 'bodylotion',
+                reason: '睡前使用，放松身心，改善睡眠'
+            }]
+        });
+    }
+    
+    if (scenario1.timeline.length > 0) {
+        scenarios.push(scenario1);
+    }
+    
+    // 场景2：休息日场景
+    const scenario2 = {
+        name: '休息日场景',
+        description: '适合休息日使用的方案，重点调理和放松',
+        timeline: []
+    };
+    
+    // 添加早晨时间点
+    if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 1) {
+        scenario2.timeline.push({
+            time: '09:00',
+            title: '起床后',
+            formulas: [{
+                formulaId: formulasByUsage.bodylotion[1].id,
+                usageType: 'bodylotion',
+                reason: '休息日早晨使用，全面调理身体'
+            }]
+        });
+    }
+    
+    // 添加下午时间点
+    if (formulasByUsage.footbath && formulasByUsage.footbath.length > 0) {
+        scenario2.timeline.push({
+            time: '19:00',
+            title: '晚上',
+            formulas: [{
+                formulaId: formulasByUsage.footbath[0].id,
+                usageType: 'footbath',
+                reason: '晚上泡脚，温阳散寒，促进循环'
+            }]
+        });
+    }
+    
+    if (scenario2.timeline.length > 0) {
+        scenarios.push(scenario2);
+    }
+    
+    if (scenarios.length === 0) {
+        return null;
+    }
+    
+    return { scenarios };
+}
+
 // 提取配方中的精油名称
 function extractOils(formula) {
     if (!formula || !formula.ingredients) return [];
@@ -414,6 +561,9 @@ function renderScenarioSides(layoutDiv, scenarios, mergedTimeline) {
             const newLeftSide = tempDiv.firstElementChild;
             if (newLeftSide) {
                 leftPlaceholder.replaceWith(newLeftSide);
+                
+                // 渲染默认安全评估
+                renderDefaultSafetyAssessment(0, newLeftSide);
             }
         });
     }
@@ -438,6 +588,9 @@ function renderScenarioSides(layoutDiv, scenarios, mergedTimeline) {
                 if (newRightSide) {
                     rightPlaceholder.replaceWith(newRightSide);
                     
+                    // 渲染默认安全评估
+                    renderDefaultSafetyAssessment(1, newRightSide);
+                    
                     // 最后初始化选中配方功能
                     requestAnimationFrame(() => {
                         initFormulaSelection();
@@ -459,12 +612,55 @@ function initFormulaSelection() {
     // 为每个场景创建安全验证容器
     const scenarioSides = document.querySelectorAll('.scenario-side');
     scenarioSides.forEach((side, index) => {
-        const safetyContainer = document.createElement('div');
-        safetyContainer.className = 'selected-formulas-safety';
-        safetyContainer.id = `safety-container-${index}`;
-        safetyContainer.style.cssText = 'margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; display: none;';
-        side.appendChild(safetyContainer);
+        // 检查是否已存在安全容器
+        let safetyContainer = document.getElementById(`safety-container-${index}`);
+        if (!safetyContainer) {
+            safetyContainer = document.createElement('div');
+            safetyContainer.className = 'selected-formulas-safety';
+            safetyContainer.id = `safety-container-${index}`;
+            safetyContainer.style.cssText = 'margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; display: none;';
+            side.appendChild(safetyContainer);
+        }
+        
+        // 默认显示场景的整体安全评估（即使没有选择配方）
+        renderDefaultSafetyAssessment(index, side);
     });
+}
+
+// 渲染默认安全评估（显示整个场景的安全评估）
+function renderDefaultSafetyAssessment(scenarioIndex, sideElement) {
+    if (typeof DailyUsageValidator === 'undefined' || !window.scenarioData) {
+        return;
+    }
+    
+    const scenario = window.scenarioData.scenarios[scenarioIndex];
+    if (!scenario || !scenario.timeline) {
+        return;
+    }
+    
+    try {
+        const usageData = DailyUsageValidator.calculateScenarioDailyUsage(scenario);
+        const safetyHTML = DailyUsageValidator.generateSafetyAssessmentCard(usageData, scenarioIndex);
+        
+        // 在场景标题下方插入默认安全评估
+        const header = sideElement.querySelector('.scenario-side-header');
+        if (header) {
+            // 检查是否已存在默认安全评估
+            let defaultSafety = sideElement.querySelector('.default-safety-assessment');
+            if (!defaultSafety) {
+                defaultSafety = document.createElement('div');
+                defaultSafety.className = 'default-safety-assessment';
+                defaultSafety.style.cssText = 'margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border-left: 3px solid var(--accent-color);';
+                defaultSafety.innerHTML = `
+                    <h4 style="font-size: 14px; font-weight: 600; color: var(--primary-color); margin-bottom: 10px;">📊 场景安全评估</h4>
+                    ${safetyHTML}
+                `;
+                header.insertAdjacentElement('afterend', defaultSafety);
+            }
+        }
+    } catch (e) {
+        console.error('Error rendering default safety assessment:', e);
+    }
 }
 
 // 选中配方（全局函数，供HTML调用）
@@ -621,16 +817,29 @@ function showError(message, details = null) {
     `;
 }
 
-// 显示加载状态
-function showLoading(message = '正在为您生成个性化场景建议...') {
+// 显示加载状态（增强版：带进度提示）
+function showLoading(message = '正在为您生成个性化场景建议...', progress = null) {
     const container = document.getElementById('scenariosContainer');
     if (!container) return;
+    
+    let progressHTML = '';
+    if (progress !== null) {
+        progressHTML = `
+            <div style="width: 100%; max-width: 400px; margin: 20px auto;">
+                <div style="background: rgba(102, 126, 234, 0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: ${progress}%; transition: width 0.3s ease; border-radius: 4px;"></div>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: var(--secondary-color); margin-top: 8px;">${progress}%</p>
+            </div>
+        `;
+    }
     
     container.innerHTML = `
         <div class="loading-state">
             <div class="loading-spinner"></div>
             <p style="font-size: 16px; color: var(--primary-color); margin-top: 20px;">${message}</p>
             <p style="font-size: 14px; color: var(--secondary-color); margin-top: 10px;">这可能需要几秒钟时间，请稍候...</p>
+            ${progressHTML}
         </div>
     `;
 }
@@ -867,15 +1076,59 @@ async function loadScenarioSuggestions() {
     }
     
     try {
-        // 调用AI生成场景建议
+        // 调用AI生成场景建议（带进度提示）
         updateLoadingMessage('正在生成个性化场景建议...');
+        showLoading('正在生成个性化场景建议...', 30);
         console.log('Calling generateScenarioSuggestions with data:', questionnaireData);
+        
+        // 模拟进度更新（实际进度由AI调用决定）
+        const progressInterval = setInterval(() => {
+            const currentProgress = parseInt(document.querySelector('.loading-state p[style*="text-align: center"]')?.textContent?.replace('%', '') || '30');
+            if (currentProgress < 80) {
+                showLoading('正在生成个性化场景建议...', Math.min(currentProgress + 5, 80));
+            }
+        }, 500);
+        
         const scenarios = await generateScenarioSuggestions(questionnaireData);
+        
+        clearInterval(progressInterval);
+        showLoading('正在渲染场景内容...', 90);
         
         console.log('Received scenarios:', scenarios);
         
         if (!scenarios) {
             console.error('generateScenarioSuggestions returned null or undefined');
+            
+            // 尝试使用降级方案：基于规则的简化场景建议
+            const fallbackScenarios = generateFallbackScenarios(questionnaireData);
+            if (fallbackScenarios && fallbackScenarios.scenarios && fallbackScenarios.scenarios.length > 0) {
+                showLoading('使用简化场景建议...', 100);
+                setTimeout(() => {
+                    renderScenarios(fallbackScenarios);
+                    renderQuickOverview(fallbackScenarios);
+                    const viewModeToggle = document.getElementById('viewModeToggle');
+                    if (viewModeToggle) {
+                        viewModeToggle.style.display = 'flex';
+                    }
+                    
+                    // 显示降级提示
+                    const container = document.getElementById('scenariosContainer');
+                    if (container) {
+                        const notice = document.createElement('div');
+                        notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;';
+                        notice.innerHTML = `
+                            <p style="color: #856404; margin: 0;">
+                                ⚠️ AI服务暂时不可用，已为您生成基于规则的简化场景建议。
+                                <button onclick="location.reload()" style="margin-left: 10px; padding: 6px 12px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">重新生成</button>
+                            </p>
+                        `;
+                        container.insertBefore(notice, container.firstChild);
+                    }
+                }, 500);
+                return;
+            }
+            
+            // 如果降级方案也失败，显示错误
             showError(
                 'AI生成场景建议失败',
                 [
@@ -883,7 +1136,9 @@ async function loadScenarioSuggestions() {
                     '• AI服务暂时不可用，请稍后重试',
                     '• 网络连接问题，请检查网络设置',
                     '• AI配置错误，请联系管理员',
-                    '• 用户数据不完整，请检查问卷填写'
+                    '• 用户数据不完整，请检查问卷填写',
+                    '',
+                    '💡 提示：您可以先查看"您的定制配方"页面，那里有基于规则的配方推荐。'
                 ]
             );
             return;
@@ -899,12 +1154,37 @@ async function loadScenarioSuggestions() {
         }
         
         // 渲染场景
-        updateLoadingMessage('正在渲染场景内容...');
+        showLoading('正在渲染场景内容...', 90);
         const renderStartTime = performance.now();
         renderScenarios(scenarios);
+        
+        // 渲染快速概览
+        renderQuickOverview(scenarios);
+        
+        // 显示视图切换按钮
+        const viewModeToggle = document.getElementById('viewModeToggle');
+        if (viewModeToggle) {
+            viewModeToggle.style.display = 'flex';
+        }
+        
+        // 检查是否需要显示首次使用引导
+        checkAndShowOnboarding();
+        
         const renderTime = performance.now() - renderStartTime;
         const totalTime = performance.now() - startTime;
         console.log(`场景渲染完成 - 渲染耗时: ${renderTime.toFixed(2)}ms, 总耗时: ${totalTime.toFixed(2)}ms`);
+        
+        // 完成加载
+        showLoading('加载完成！', 100);
+        setTimeout(() => {
+            const container = document.getElementById('scenariosContainer');
+            if (container) {
+                const loadingState = container.querySelector('.loading-state');
+                if (loadingState) {
+                    loadingState.style.display = 'none';
+                }
+            }
+        }, 500);
     } catch (error) {
         console.error('Error loading scenario suggestions:', error);
         console.error('Error stack:', error.stack);
