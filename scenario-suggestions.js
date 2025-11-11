@@ -580,36 +580,57 @@ function updateSafetyValidation(scenarioIndex) {
         safetyContainer.style.display = 'block';
     } catch (e) {
         console.error('Error calculating safety validation:', e);
-        safetyContainer.innerHTML = '<p style="color: #dc2626;">安全验证计算出错</p>';
+        safetyContainer.innerHTML = `
+            <p style="color: #dc2626; margin-bottom: 10px;">安全验证计算出错：${e.message}</p>
+            <p style="color: #666; font-size: 12px;">请检查配方数据是否正确，或刷新页面重试。</p>
+        `;
         safetyContainer.style.display = 'block';
     }
 }
 
 // 显示错误状态
-function showError(message) {
+function showError(message, details = null) {
     const container = document.getElementById('scenariosContainer');
     if (!container) return;
     
+    let detailsHTML = '';
+    if (details) {
+        if (Array.isArray(details)) {
+            detailsHTML = `<ul style="text-align: left; margin-top: 15px; padding-left: 20px;">
+                ${details.map(d => `<li style="margin: 8px 0; color: #666;">${d}</li>`).join('')}
+            </ul>`;
+        } else if (typeof details === 'string') {
+            detailsHTML = `<p style="margin-top: 15px; color: #666; font-size: 14px;">${details}</p>`;
+        }
+    }
+    
     container.innerHTML = `
         <div class="error-state">
-            <h3>生成场景建议时出错</h3>
-            <p>${message}</p>
-            <a href="health-profile.html" class="btn btn-primary" style="margin-top: 20px; text-decoration: none; display: inline-block;">
-                返回问卷
-            </a>
+            <h3 style="color: #dc3545; margin-bottom: 15px;">⚠️ 生成场景建议时出错</h3>
+            <p style="font-size: 16px; margin-bottom: 10px;">${message}</p>
+            ${detailsHTML}
+            <div style="margin-top: 25px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="health-profile.html" class="btn btn-primary" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: 600;">
+                    返回问卷
+                </a>
+                <button onclick="location.reload()" class="btn" style="padding: 12px 24px; background: white; color: var(--accent-color); border: 2px solid var(--accent-color); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    刷新页面
+                </button>
+            </div>
         </div>
     `;
 }
 
 // 显示加载状态
-function showLoading() {
+function showLoading(message = '正在为您生成个性化场景建议...') {
     const container = document.getElementById('scenariosContainer');
     if (!container) return;
     
     container.innerHTML = `
         <div class="loading-state">
             <div class="loading-spinner"></div>
-            <p>正在为您生成个性化场景建议...</p>
+            <p style="font-size: 16px; color: var(--primary-color); margin-top: 20px;">${message}</p>
+            <p style="font-size: 14px; color: var(--secondary-color); margin-top: 10px;">这可能需要几秒钟时间，请稍候...</p>
         </div>
     `;
 }
@@ -855,13 +876,25 @@ async function loadScenarioSuggestions() {
         
         if (!scenarios) {
             console.error('generateScenarioSuggestions returned null or undefined');
-            showError('AI生成场景建议失败，请稍后重试。请检查AI配置和网络连接。');
+            showError(
+                'AI生成场景建议失败',
+                [
+                    '可能的原因：',
+                    '• AI服务暂时不可用，请稍后重试',
+                    '• 网络连接问题，请检查网络设置',
+                    '• AI配置错误，请联系管理员',
+                    '• 用户数据不完整，请检查问卷填写'
+                ]
+            );
             return;
         }
         
         if (!scenarios.scenarios || scenarios.scenarios.length === 0) {
             console.error('Scenarios array is empty');
-            showError('AI返回的场景数据为空，请稍后重试。');
+            showError(
+                'AI返回的场景数据为空',
+                'AI服务已响应，但未生成有效的场景建议。请尝试刷新页面或重新填写问卷。'
+            );
             return;
         }
         

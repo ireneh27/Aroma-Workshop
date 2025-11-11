@@ -241,6 +241,7 @@
                 <a href="health-profile.html">您的信息档案</a>
                 <a href="formulas.html">您的定制配方</a>
                 <a href="recipe-database.html">您的私人配方库</a>
+                <a href="my-formulas.html" id="navMyFormulas" style="display: none;">我的配方库</a>
                 <a href="login.html" id="navLoginLink">登录</a>
                 <span id="navUserInfo" style="display: none; padding: var(--spacing-sm) var(--spacing-md); color: var(--accent-color); font-weight: 600;"></span>
             </nav>
@@ -250,6 +251,11 @@
     <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
 
     <main id="main-content" class="container">
+        <!-- 个性化欢迎信息（仅登录用户显示） -->
+        <div id="personalizedWelcome" style="display: none; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); padding: 30px; border-radius: 16px; margin-bottom: 40px; border: 2px solid rgba(102, 126, 234, 0.2);">
+            <!-- 内容将由JavaScript动态生成 -->
+        </div>
+        
         <!-- Hero Section - 主视觉区域 -->
         <div class="hero">
             <div class="hero-content">
@@ -303,5 +309,104 @@
     <script src="common.js"></script>
     <script src="auth.js"></script>
     <script src="auth-nav.js"></script>
+    <script src="formula-suggestions.js"></script>
+    <script>
+        // 显示个性化欢迎信息
+        function renderPersonalizedWelcome() {
+            if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+                return;
+            }
+            
+            const welcomeDiv = document.getElementById('personalizedWelcome');
+            if (!welcomeDiv) return;
+            
+            const user = window.authSystem.getCurrentUser();
+            const stats = window.authSystem.getUserStatistics();
+            const userInfo = window.authSystem.getUserInfo();
+            
+            // 检查是否有问卷数据
+            let hasQuestionnaire = false;
+            let recentFormulas = [];
+            if (typeof getQuestionnaireData !== 'undefined') {
+                const questionnaireData = getQuestionnaireData();
+                hasQuestionnaire = !!questionnaireData;
+            }
+            
+            // 获取最近查看的配方
+            const history = window.authSystem.getUserHistory(3);
+            if (typeof FORMULA_DATABASE !== 'undefined') {
+                recentFormulas = history
+                    .map(item => FORMULA_DATABASE[item.id])
+                    .filter(f => f)
+                    .slice(0, 3);
+            }
+            
+            const displayName = userInfo.name || (userInfo.email ? userInfo.email.split('@')[0] : '用户');
+            
+            let welcomeHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <h2 style="font-size: 24px; font-weight: 600; color: var(--primary-color); margin-bottom: 10px;">
+                            👋 欢迎回来，${displayName}！
+                        </h2>
+                        <p style="color: var(--secondary-color); margin-bottom: 20px;">
+                            ${hasQuestionnaire ? '您的健康档案已保存，可以随时查看个性化配方推荐。' : '完成健康问卷，获取专属配方推荐。'}
+                        </p>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            ${hasQuestionnaire ? `
+                                <a href="formulas.html" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
+                                    查看我的配方
+                                </a>
+                            ` : `
+                                <a href="health-profile.html" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
+                                    填写健康问卷
+                                </a>
+                            `}
+                            <a href="my-formulas.html" class="btn" style="text-decoration: none; display: inline-block; padding: 12px 24px; border-radius: 8px; font-weight: 600; background: white; color: var(--accent-color); border: 2px solid var(--accent-color);">
+                                我的配方库
+                            </a>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="text-align: center; padding: 15px 20px; background: white; border-radius: 8px; min-width: 100px;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--accent-color); margin-bottom: 5px;">${stats.totalFavorites}</div>
+                            <div style="font-size: 12px; color: var(--secondary-color);">收藏</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px 20px; background: white; border-radius: 8px; min-width: 100px;">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--accent-color); margin-bottom: 5px;">${stats.remainingAIInquiries}</div>
+                            <div style="font-size: 12px; color: var(--secondary-color);">剩余AI</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 如果有最近查看的配方，显示快速入口
+            if (recentFormulas.length > 0) {
+                welcomeHTML += `
+                    <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(102, 126, 234, 0.2);">
+                        <h3 style="font-size: 16px; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">🕒 最近查看</h3>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            ${recentFormulas.map(formula => `
+                                <a href="formula-detail.html?id=${formula.id}" 
+                                   style="display: inline-block; padding: 10px 16px; background: white; border-radius: 8px; text-decoration: none; color: var(--primary-color); font-size: 14px; border: 1px solid var(--border-color); transition: all 0.3s ease;"
+                                   onmouseover="this.style.borderColor='var(--accent-color)'; this.style.transform='translateY(-2px)';"
+                                   onmouseout="this.style.borderColor='var(--border-color)'; this.style.transform='translateY(0)';">
+                                    ${formula.name || '未命名配方'}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            welcomeDiv.innerHTML = welcomeHTML;
+            welcomeDiv.style.display = 'block';
+        }
+        
+        // 页面加载时渲染
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPersonalizedWelcome();
+        });
+    </script>
 </body>
 </html>

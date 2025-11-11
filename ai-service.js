@@ -369,6 +369,116 @@ async function generateAISuggestionText(questionnaireData, formula) {
     return await callAI(messages, { maxTokens: 150 });
 }
 
+// 验证场景响应数据质量
+function validateScenarioResponse(response, availableFormulas, usageTypes) {
+    const errors = [];
+    const warnings = [];
+    let severity = 'warning'; // 'warning' or 'error'
+    
+    if (!response || !response.scenarios) {
+        return { valid: false, errors: ['响应中缺少scenarios字段'], severity: 'error' };
+    }
+    
+    if (!Array.isArray(response.scenarios)) {
+        return { valid: false, errors: ['scenarios必须是数组'], severity: 'error' };
+    }
+    
+    if (response.scenarios.length === 0) {
+        return { valid: false, errors: ['scenarios数组为空'], severity: 'error' };
+    }
+    
+    if (response.scenarios.length < 2) {
+        warnings.push('只生成了1个场景，建议生成2个不同的场景');
+    }
+    
+    // 创建可用配方ID集合
+    const availableFormulaIds = new Set(availableFormulas.map(f => f.id));
+    
+    // 验证每个场景
+    response.scenarios.forEach((scenario, scenarioIndex) => {
+        if (!scenario.name || !scenario.description) {
+            warnings.push(`场景${scenarioIndex + 1}缺少名称或描述`);
+        }
+        
+        if (!scenario.timeline || !Array.isArray(scenario.timeline)) {
+            errors.push(`场景${scenarioIndex + 1}缺少timeline或timeline不是数组`);
+            severity = 'error';
+            return;
+        }
+        
+        if (scenario.timeline.length === 0) {
+            errors.push(`场景${scenarioIndex + 1}的timeline为空`);
+            severity = 'error';
+            return;
+        }
+        
+        if (scenario.timeline.length < 3) {
+            warnings.push(`场景${scenarioIndex + 1}的时间点过少（少于3个）`);
+        }
+        
+        // 验证时间线中的每个时间点
+        scenario.timeline.forEach((item, itemIndex) => {
+            if (!item.time || !/^\d{2}:\d{2}$/.test(item.time)) {
+                errors.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}的时间格式不正确（应为HH:MM格式）`);
+                severity = 'error';
+            }
+            
+            if (!item.formulas || !Array.isArray(item.formulas)) {
+                errors.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}缺少formulas或formulas不是数组`);
+                severity = 'error';
+                return;
+            }
+            
+            // 按使用方式分组，检查每种使用方式的配方数量
+            const formulasByUsage = {};
+            item.formulas.forEach((formula, formulaIndex) => {
+                if (!formula.formulaId) {
+                    errors.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}的配方${formulaIndex + 1}缺少formulaId`);
+                    severity = 'error';
+                    return;
+                }
+                
+                // 检查配方ID是否在可用列表中
+                if (!availableFormulaIds.has(formula.formulaId)) {
+                    errors.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}使用了不存在的配方ID: ${formula.formulaId}`);
+                    severity = 'error';
+                    return;
+                }
+                
+                if (!formula.usageType) {
+                    errors.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}的配方${formulaIndex + 1}缺少usageType`);
+                    severity = 'error';
+                    return;
+                }
+                
+                if (!usageTypes.includes(formula.usageType)) {
+                    warnings.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}使用了未选择的使用方式: ${formula.usageType}`);
+                }
+                
+                // 统计每种使用方式的配方数量
+                if (!formulasByUsage[formula.usageType]) {
+                    formulasByUsage[formula.usageType] = 0;
+                }
+                formulasByUsage[formula.usageType]++;
+            });
+            
+            // 检查每种使用方式的配方数量是否超过限制
+            Object.keys(formulasByUsage).forEach(usageType => {
+                if (formulasByUsage[usageType] > 2) {
+                    warnings.push(`场景${scenarioIndex + 1}的时间点${itemIndex + 1}的${usageType}使用方式推荐了${formulasByUsage[usageType]}个配方，建议最多2个`);
+                }
+            });
+        });
+    });
+    
+    return {
+        valid: errors.length === 0,
+        errors: errors,
+        warnings: warnings,
+        severity: severity
+    };
+}
+
 // 生成带时间线的综合使用场景建议
 async function generateScenarioSuggestions(questionnaireData) {
     if (!questionnaireData || AI_CONFIG.provider === 'none') {
@@ -435,45 +545,63 @@ async function generateScenarioSuggestions(questionnaireData) {
         availableFormulas = Object.values(FORMULA_DATABASE).map(formula => {
             if (!formula || !formula.id) return null;
             
-            // 提取精油名称
+            // 提取精油名称（改进：支持更多格式）
             const oils = [];
             if (formula.ingredients && Array.isArray(formula.ingredients)) {
                 formula.ingredients.forEach(ing => {
-                    if (ing && ing.name && ing.name.includes('精油')) {
-                        const oilName = ing.name.replace('精油', '').trim();
-                        if (oilName && !oils.includes(oilName)) {
-                            oils.push(oilName);
+                    if (ing && ing.name) {
+                        // 匹配各种精油名称格式
+                        const oilNameMatch = ing.name.match(/([^精油]+)精油/);
+                        if (oilNameMatch) {
+                            const oilName = oilNameMatch[1].trim();
+                            if (oilName && !oils.includes(oilName)) {
+                                oils.push(oilName);
+                            }
                         }
                     }
                 });
             }
             
-            // 确定使用方式
+            // 确定使用方式（改进：更准确的匹配）
             let usageType = '';
-            const name = formula.name || '';
-            const subtitle = formula.subtitle || '';
+            const name = (formula.name || '').toLowerCase();
+            const subtitle = (formula.subtitle || '').toLowerCase();
+            const combinedText = name + ' ' + subtitle;
             
-            if (name.includes('护手霜') || subtitle.includes('护手霜')) {
+            // 优先级匹配：先匹配更具体的，再匹配通用的
+            if (combinedText.includes('护手霜') || combinedText.includes('handcream')) {
                 usageType = 'handcream';
-            } else if (name.includes('身体乳') || subtitle.includes('身体乳')) {
+            } else if (combinedText.includes('身体乳') || combinedText.includes('bodylotion')) {
                 usageType = 'bodylotion';
-            } else if (name.includes('泡脚') || name.includes('泡澡') || subtitle.includes('泡脚') || subtitle.includes('泡澡')) {
+            } else if (combinedText.includes('泡脚') || combinedText.includes('泡澡') || 
+                      combinedText.includes('footbath') || combinedText.includes('bath')) {
                 usageType = 'footbath';
-            } else if (name.includes('扩香') || subtitle.includes('扩香')) {
+            } else if (combinedText.includes('扩香') || combinedText.includes('diffuser')) {
                 usageType = 'diffuser';
-            } else if (name.includes('喷雾') || subtitle.includes('喷雾')) {
+            } else if (combinedText.includes('喷雾') || combinedText.includes('spray')) {
                 usageType = 'spray';
+            }
+            
+            // 如果没有匹配到使用方式，跳过该配方
+            if (!usageType) {
+                return null;
+            }
+            
+            // 检查是否匹配用户选择的使用方式
+            if (!usageTypes.includes(usageType)) {
+                return null;
             }
             
             return {
                 id: formula.id,
-                name: name,
-                subtitle: subtitle,
+                name: formula.name || '',
+                subtitle: formula.subtitle || '',
                 usageType: usageType,
                 oils: oils,
-                matches: formula.matches || []
+                matches: formula.matches || [],
+                formula: formula // 保留完整配方对象供后续使用
             };
-        }).filter(f => f && f.usageType && usageTypes.includes(f.usageType));
+        }).filter(f => f !== null);
     } else {
         console.warn('FORMULA_DATABASE is not available');
     }
@@ -496,72 +624,123 @@ async function generateScenarioSuggestions(questionnaireData) {
         console.warn('No formulas found for usage types:', emptyUsageTypes);
     }
     
-    const systemPrompt = `你是一位专业的芳疗师，擅长制定个性化的精油使用方案。
+    const systemPrompt = `你是一位专业的芳疗师，擅长制定个性化的精油使用方案。你需要根据用户的健康状况、使用方式偏好和香味偏好，生成2个不同的综合使用场景建议。
 
-请根据用户的健康状况、使用方式偏好和香味偏好，生成2个不同的综合使用场景建议。
+## 核心要求
 
-每个场景建议需要包含：
-1. 场景名称和简要描述
-2. 一天的时间线（从早晨到晚上，包含具体时间点）
-3. 每个时间点使用的配方（每种使用方式最多推荐1-2个配方）
-4. 每个配方的简要说明（为什么在这个时间点使用）
+### 场景设计原则
+1. **场景差异化**：两个场景应该有不同的侧重点和适用场景（例如：工作日场景 vs 周末场景，或 日常保养场景 vs 特殊调理场景）
+2. **时间线合理性**：时间点应符合日常生活节奏，从早晨（07:00-09:00）到晚上（19:00-22:00），时间间隔合理
+3. **配方匹配度**：优先推荐与用户症状最匹配的配方，考虑配方的功效和适用时间
 
-重要要求：
-- 根据用户选择的使用方式（${usageTypes.map(u => usageMap[u] || u).join('、')}）来设计场景
-- **每种使用方式在每个场景的每个时间点最多只能推荐1-2个最匹配的配方**（这是硬性要求）
-- 如果某个时间点需要使用某种使用方式，只能从该使用方式的配方中选择1-2个最匹配的
-- 考虑用户的香味偏好（${fragranceTypes.length > 0 ? fragranceTypes.map(f => fragranceMap[f] || f).join('、') : '无特定偏好'}）
-- 时间线要合理，符合日常生活节奏
-- 配方要针对用户的具体症状和需求
-- 只能使用以下可用配方列表中的配方ID
+### 配方选择规则（严格遵循）
+- **每个时间点的每种使用方式最多只能推荐1-2个配方**（这是硬性要求，不可违反）
+- 如果某个时间点需要使用某种使用方式，只能从该使用方式的可用配方列表中选择
+- 优先选择与用户症状匹配度高的配方（参考配方的matches字段）
+- 考虑用户的香味偏好，但症状匹配度优先于香味偏好
+- 所有formulaId必须严格来自可用配方列表，不能自行编造
 
-可用配方列表（按使用方式分类）：
+### 时间点设计建议
+- **早晨（07:00-09:00）**：适合提神、醒脑、提升专注力的配方
+- **上午（09:00-12:00）**：适合工作时段使用的配方，如护手霜、扩香
+- **中午（12:00-14:00）**：适合餐后消化调理的配方
+- **下午（14:00-18:00）**：适合缓解疲劳、提升精力的配方
+- **晚上（18:00-22:00）**：适合放松、助眠、温阳的配方，如泡脚、身体乳
+
+### 安全考虑
+- 避免在同一时间点推荐过多配方导致每日用量超标
+- 考虑孕期、哺乳期等特殊状态，避免使用不安全的配方
+- 注意高血压、癫痫等特殊注意事项
+
+## 可用配方列表（按使用方式分类）
+
 ${Object.keys(formulasByUsage).map(usage => {
     const formulas = formulasByUsage[usage];
     if (formulas.length === 0) return '';
-    return `${usageMap[usage]} (${usage}):\n${formulas.map(f => `  - ${f.id}: ${f.name} (${f.subtitle || ''}) [精油: ${f.oils.length > 0 ? f.oils.join('、') : '无'}]`).join('\n')}`;
+    return `### ${usageMap[usage]} (${usage})
+${formulas.map(f => {
+    const matchesStr = f.matches && f.matches.length > 0 ? `[适用症状: ${f.matches.join('、')}]` : '';
+    return `- **${f.id}**: ${f.name}${f.subtitle ? ` - ${f.subtitle}` : ''} ${matchesStr} [精油: ${f.oils.length > 0 ? f.oils.join('、') : '无'}]`;
+}).join('\n')}`;
 }).filter(s => s).join('\n\n')}
 
-${Object.keys(formulasByUsage).every(usage => formulasByUsage[usage].length === 0) ? '警告：没有找到匹配的配方，请检查用户选择的使用方式。' : ''}
+${Object.keys(formulasByUsage).every(usage => formulasByUsage[usage].length === 0) ? '⚠️ **警告**：没有找到匹配的配方，请检查用户选择的使用方式。' : ''}
 
-请以JSON格式返回，格式如下：
+## 输出格式要求
+
+请以**纯JSON格式**返回，不要包含任何markdown代码块标记（如\`\`\`json）。格式如下：
+
 {
   "scenarios": [
     {
-      "name": "场景名称",
-      "description": "场景描述",
+      "name": "场景名称（简洁明了，如：工作日提神方案）",
+      "description": "场景描述（1-2句话说明该场景的适用情况和特点）",
       "timeline": [
-      {
-        "time": "时间点（如：07:00）",
-        "title": "活动名称",
-        "formulas": [
-          {
-            "formulaId": "配方ID（必须从可用配方列表中选择）",
-            "usageType": "使用方式（handcream/bodylotion/footbath/diffuser/spray）",
-            "reason": "为什么在这个时间点使用这个配方"
-          }
-        ]
-      }
-    ]
+        {
+          "time": "时间点（格式：HH:MM，如：07:00）",
+          "title": "活动名称（如：起床后、工作时段、餐后、睡前等）",
+          "formulas": [
+            {
+              "formulaId": "配方ID（必须严格从可用配方列表中选择）",
+              "usageType": "使用方式（必须是：handcream/bodylotion/footbath/diffuser/spray之一）",
+              "reason": "使用理由（1-2句话说明为什么在这个时间点使用这个配方，要结合用户症状）"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
 
-请确保：
-1. 返回的是有效的JSON格式，不要包含任何markdown格式标记
-2. 每个时间点的每种使用方式最多只推荐1-2个配方
-3. 所有formulaId必须来自可用配方列表`;
+## 输出检查清单
+- [ ] 返回的是纯JSON格式，无markdown标记
+- [ ] 生成了2个不同的场景
+- [ ] 每个场景有3-8个时间点
+- [ ] 每个时间点的每种使用方式最多1-2个配方
+- [ ] 所有formulaId都来自可用配方列表
+- [ ] 所有usageType都是有效的使用方式
+- [ ] 时间点按时间顺序排列
+- [ ] 配方选择考虑了用户症状和偏好`;
 
-    const userPrompt = `用户信息:
-- 性别: ${questionnaireData.gender === 'female' ? '女性' : '男性'}
-- 年龄: ${questionnaireData.age || '未填写'}
-- 孕期状态: ${questionnaireData.pregnancy === 'yes' ? '怀孕' : questionnaireData.pregnancy === 'nursing' ? '哺乳期' : '否'}
-- 症状: ${symptoms.join('\n') || '无明确症状'}
-- 特殊注意事项: ${(questionnaireData.caution || []).filter(c => c !== 'none').join('、') || '无'}
-- 选择的使用方式: ${usageTypes.map(u => usageMap[u] || u).join('、')}
-- 香味偏好: ${fragranceTypes.length > 0 ? fragranceTypes.map(f => fragranceMap[f] || f).join('、') : '无特定偏好'}
+    // 构建更详细的用户信息
+    const userInfo = {
+        gender: questionnaireData.gender === 'female' ? '女性' : '男性',
+        age: questionnaireData.age || '未填写',
+        pregnancy: questionnaireData.pregnancy === 'yes' ? '怀孕' : 
+                   questionnaireData.pregnancy === 'nursing' ? '哺乳期' : '否',
+        symptoms: symptoms.length > 0 ? symptoms.join('\n') : '无明确症状',
+        cautions: (questionnaireData.caution || []).filter(c => c !== 'none').join('、') || '无',
+        usageTypes: usageTypes.map(u => usageMap[u] || u).join('、'),
+        fragrance: fragranceTypes.length > 0 ? fragranceTypes.map(f => fragranceMap[f] || f).join('、') : '无特定偏好'
+    };
+    
+    const userPrompt = `## 用户信息
 
-请生成2个不同的综合使用场景建议。`;
+**基本信息**
+- 性别: ${userInfo.gender}
+- 年龄: ${userInfo.age}
+- 孕期状态: ${userInfo.pregnancy}
+
+**健康状况**
+${userInfo.symptoms}
+
+**特殊注意事项**
+${userInfo.cautions}
+
+**使用偏好**
+- 选择的使用方式: ${userInfo.usageTypes}
+- 香味偏好: ${userInfo.fragrance}
+
+## 任务要求
+
+请根据以上信息，生成**2个不同的综合使用场景建议**。要求：
+1. 两个场景要有明显的差异化（例如：工作日 vs 周末，或 日常保养 vs 特殊调理）
+2. 每个场景包含完整的一天时间线（从早晨到晚上）
+3. 每个时间点推荐1-2个最匹配的配方
+4. 配方选择要优先考虑症状匹配度，其次考虑香味偏好
+5. 时间安排要符合日常生活节奏
+
+请开始生成场景建议。`;
 
     const messages = [
         { role: 'system', content: systemPrompt },
@@ -597,16 +776,31 @@ ${Object.keys(formulasByUsage).every(usage => formulasByUsage[usage].length === 
                 return null;
             }
             
+            // 验证场景数据质量
+            const validationResult = validateScenarioResponse(jsonResponse, availableFormulas, usageTypes);
+            if (!validationResult.valid) {
+                console.warn('Scenario validation failed:', validationResult.errors);
+                // 如果只是警告级别的问题，仍然返回数据但记录警告
+                if (validationResult.severity === 'error') {
+                    return null;
+                }
+            }
+            
         } catch (e) {
             console.error('Failed to parse AI response as JSON:', e);
             console.log('Raw AI Response:', response);
             console.log('Response length:', response.length);
-            // 尝试提取JSON部分
+            // 尝试提取JSON部分（更智能的提取）
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 try {
                     jsonResponse = JSON.parse(jsonMatch[0]);
                     if (jsonResponse.scenarios && Array.isArray(jsonResponse.scenarios)) {
+                        // 验证提取的JSON
+                        const validationResult = validateScenarioResponse(jsonResponse, availableFormulas, usageTypes);
+                        if (!validationResult.valid && validationResult.severity === 'error') {
+                            return null;
+                        }
                         return jsonResponse;
                     }
                 } catch (e2) {
