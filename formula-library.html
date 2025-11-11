@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="经典配方库 - 按介质分类的精油配方">
+    <title>经典配方库 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .formula-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+        }
+        .formula-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        .formula-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .formula-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        .formula-card-subtitle {
+            font-size: 13px;
+            color: var(--secondary-color);
+            line-height: 1.5;
+        }
+        .formula-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 15px;
+        }
+        .oil-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .base-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .base-type-handcream {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .base-type-bodylotion {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .base-type-footbath {
+            background: #d4edda;
+            color: #155724;
+        }
+        .base-type-diffuser {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .base-type-spray {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .formula-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        .category-section {
+            margin: 50px 0;
+        }
+        .category-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent-color);
+        }
+        .category-description {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .search-filter {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 13px;
+        }
+        .filter-btn.active {
+            background: var(--accent-gradient);
+            color: white;
+            border-color: transparent;
+        }
+        .filter-btn:hover {
+            border-color: var(--accent-color);
+        }
+        .advanced-filter-toggle {
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--secondary-color);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .advanced-filter-toggle:hover {
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        .advanced-filter-content {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        .advanced-filter-content.show {
+            display: block;
+        }
+        .advanced-filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .advanced-filter-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .result-count-inline {
+            font-size: 14px;
+            color: var(--secondary-color);
+            margin-left: auto;
+        }
+        .result-count-inline strong {
+            color: var(--accent-color);
+            font-size: 16px;
+        }
+        @media (max-width: 768px) {
+            .advanced-filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 左侧大纲导航 */
+        .sidebar-nav {
+            position: fixed;
+            left: 0;
+            top: 60px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color-dark);
+            border-radius: 3px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        .sidebar-nav h3 {
+            padding: 0 20px 15px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .sidebar-nav a:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--accent-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .main-wrapper {
+            margin-left: 280px;
+            padding: 20px;
+            max-width: calc(100% - 280px);
+        }
+        
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            left: 20px;
+            top: 70px;
+            z-index: 101;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            font-size: 18px;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--accent-gradient-hover);
+        }
+        
+        .category-section {
+            scroll-margin-top: 100px;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar-nav {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar-nav.open {
+                transform: translateX(0);
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media print {
+            .sidebar-nav, .back-to-top, .fixed-nav, .sidebar-toggle {
+                display: none !important;
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html" aria-current="page">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: 8px 15px; color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <!-- 侧边栏导航 -->
+    <nav class="sidebar-nav" id="sidebarNav" role="navigation" aria-label="页面大纲导航">
+        <h3>目录</h3>
+        <ul>
+            <li><a href="#search-filter">搜索与筛选</a></li>
+            <li><a href="#category-handcream">护手霜配方</a></li>
+            <li><a href="#category-bodylotion">身体乳配方</a></li>
+            <li><a href="#category-footbath">泡脚/泡澡配方</a></li>
+            <li><a href="#category-diffuser">扩香配方</a></li>
+            <li><a href="#category-spray">喷雾配方</a></li>
+        </ul>
+    </nav>
+
+    <!-- 侧边栏切换按钮（移动端） -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航菜单">☰</button>
+
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+        <main id="main-content" class="container">
+        <h1>经典配方库</h1>
+        <p class="subtitle">所有配方按介质分类，点击卡片查看详细配方</p>
+
+        <!-- 搜索和筛选 -->
+        <div class="search-filter" id="search-filter">
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索配方名称或功能..." aria-label="搜索配方">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">全部</button>
+                <button class="filter-btn" data-filter="handcream">护手霜</button>
+                <button class="filter-btn" data-filter="bodylotion">身体乳</button>
+                <button class="filter-btn" data-filter="footbath">泡脚/泡澡</button>
+                <button class="filter-btn" data-filter="diffuser">扩香</button>
+                <button class="filter-btn" data-filter="spray">喷雾</button>
+            </div>
+            
+            <!-- 高级筛选（可折叠） -->
+            <button class="advanced-filter-toggle" id="advancedFilterToggle" aria-expanded="false">
+                <span>高级筛选</span>
+                <span id="toggleIcon">▼</span>
+            </button>
+            
+            <div class="advanced-filter-content" id="advancedFilterContent">
+                <div class="advanced-filter-grid">
+                    <!-- 精油选择 -->
+                    <div class="form-group">
+                        <label for="oilSelect" style="margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--primary-color);">选择精油 (最多2种)</label>
+                        <select id="oilSelect" style="padding: 10px; border: 2px solid var(--border-color); border-radius: 6px; font-size: 14px; background: white; color: var(--primary-color); width: 100%;">
+                            <option value="">-- 选择精油 --</option>
+                        </select>
+                        <div id="selectedOilsDisplay" style="margin-top: 8px; min-height: 28px; padding: 8px; background: var(--bg-secondary); border-radius: 6px; font-size: 12px;">
+                            <span style="color: var(--secondary-color);">未选择精油</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 基底类型选择 -->
+                    <div class="form-group">
+                        <label for="baseTypeSelect" style="margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--primary-color);">选择基底类型</label>
+                        <select id="baseTypeSelect" style="padding: 10px; border: 2px solid var(--border-color); border-radius: 6px; font-size: 14px; background: white; color: var(--primary-color); width: 100%;">
+                            <!-- 选项将由JavaScript填充 -->
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮和结果计数 -->
+                <div class="advanced-filter-actions">
+                    <button id="filterBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">筛选配方</button>
+                    <button id="clearBtn" class="btn btn-outline" style="padding: 8px 16px; font-size: 14px; background: white; color: var(--accent-color); border-color: var(--accent-color);">清除筛选</button>
+                    <span class="result-count-inline">
+                        找到 <strong id="resultCount">0</strong> 个匹配的配方
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选结果区域 -->
+        <div id="filteredFormulas" class="mt-lg mb-lg" style="display: none;">
+            <!-- 筛选结果将在这里显示 -->
+        </div>
+
+        <!-- 护手霜配方 -->
+        <div id="category-handcream" class="category-section" data-category="handcream">
+            <h2 class="category-title">护手霜配方</h2>
+            <p class="category-description">使用无香护手霜作为基底,适合手部局部使用,便于携带和随时涂抹。</p>
+            <div class="formula-grid" id="handcream-grid">
+                <!-- Card将由JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 身体乳配方 -->
+        <div id="category-bodylotion" class="category-section" data-category="bodylotion">
+            <h2 class="category-title">身体乳配方</h2>
+            <p class="category-description">使用无香身体乳作为基底,适合大面积身体使用,滋润保湿同时发挥精油功效。</p>
+            <div class="formula-grid" id="bodylotion-grid">
+                <!-- Card将由JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 泡脚/泡澡配方 -->
+        <div id="category-footbath" class="category-section" data-category="footbath">
+            <h2 class="category-title">泡脚/泡澡配方</h2>
+            <p class="category-description">使用热水或温水作为基底,通过水温和精油协同作用,促进血液循环,改善末梢循环。</p>
+            <div class="formula-grid" id="footbath-grid">
+                <!-- Card将由JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 扩香配方 -->
+        <div id="category-diffuser" class="category-section" data-category="diffuser">
+            <h2 class="category-title">扩香配方</h2>
+            <p class="category-description">无需基底,直接使用精油进行空气扩散。通过嗅觉系统发挥作用,不计入皮肤接触量,安全性高。</p>
+            <div class="formula-grid" id="diffuser-grid">
+                <!-- Card将由JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 喷雾配方 -->
+        <div id="category-spray" class="category-section" data-category="spray">
+            <h2 class="category-title">喷雾配方</h2>
+            <p class="category-description">使用玫瑰纯露或双脱醛乙醇作为基底,制作成喷雾形式,方便携带和使用。通过嗅觉和局部皮肤吸收发挥作用。</p>
+            <div class="formula-grid" id="spray-grid">
+                <!-- Card将由JavaScript动态生成 -->
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="oil-database.js"></script>
+    <script src="recipe-db.js"></script>
+    <script src="unified-data-manager.js"></script>
+    <script src="safety-evaluator.js"></script>
+    <script src="formula-suggestions.js"></script>
+    <script src="formula-filter.js"></script>
+    <script src="formula-library.js"></script>
+    <script>
+        // 高级筛选展开/折叠功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const advancedFilterToggle = document.getElementById('advancedFilterToggle');
+            const advancedFilterContent = document.getElementById('advancedFilterContent');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (advancedFilterToggle && advancedFilterContent) {
+                advancedFilterToggle.addEventListener('click', function() {
+                    const isExpanded = advancedFilterContent.classList.toggle('show');
+                    advancedFilterToggle.setAttribute('aria-expanded', isExpanded);
+                    toggleIcon.textContent = isExpanded ? '▲' : '▼';
+                });
+            }
+        });
+        
+        // 侧边栏导航功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarNav = document.getElementById('sidebarNav');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const navLinks = sidebarNav.querySelectorAll('a');
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebarNav.classList.toggle('open');
+                });
+            }
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 1024) {
+                        sidebarNav.classList.remove('open');
+                    }
+                });
+            });
+            
+            // 高亮当前活动导航项
+            function updateActiveNav() {
+                const sections = document.querySelectorAll('[id^="category-"], #search-filter');
+                const scrollPos = window.scrollY + 150;
+                
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            // 平滑滚动
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        const offsetTop = target.offsetTop - 80;
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // 滚动时更新活动导航项
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav();
+            
+            // 点击外部区域关闭移动端侧边栏
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 1024) {
+                    if (!sidebarNav.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                        sidebarNav.classList.remove('open');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="配方制作指南">
+    <title>配方制作指南 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 左侧大纲导航 */
+        .sidebar-nav {
+            position: fixed;
+            left: 0;
+            top: 60px; /* 在固定导航栏下方 */
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color-dark);
+            border-radius: 3px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        .sidebar-nav h3 {
+            padding: 0 20px 15px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .sidebar-nav a:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--accent-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .sidebar-nav .nav-section {
+            margin-top: 10px;
+        }
+        
+        .sidebar-nav .nav-section-title {
+            padding: 12px 20px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 主内容区域调整 */
+        .main-wrapper {
+            margin-left: 280px;
+            padding: 20px;
+            max-width: calc(100% - 280px);
+        }
+        
+        /* FAQ项初始状态 */
+        .faq-item p {
+            display: none;
+        }
+        
+        .faq-item h4:hover {
+            opacity: 0.8;
+        }
+        
+        /* 表格响应式 */
+        @media (max-width: 1024px) {
+            .sidebar-nav {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar-nav.open {
+                transform: translateX(0);
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+            
+            .medium-section {
+                padding: 15px !important;
+            }
+        }
+        
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            left: 20px;
+            top: 70px;
+            z-index: 101;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            font-size: 18px;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--accent-gradient-hover);
+        }
+        
+        /* 打印样式 */
+        @media print {
+            .sidebar-nav, .back-to-top, .fixed-nav, .sidebar-toggle {
+                display: none !important;
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .medium-section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+    <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html" aria-current="page">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: var(--spacing-sm) var(--spacing-md); color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <!-- 侧边栏导航 -->
+    <nav class="sidebar-nav" id="sidebarNav" role="navigation" aria-label="页面大纲导航">
+        <h3>目录</h3>
+        <ul>
+            <li class="nav-section">
+                <div class="nav-section-title">基础信息</div>
+                <ul>
+                    <li><a href="#tools-materials">所需工具与材料</a></li>
+                    <li><a href="#quick-reference">快速参考</a></li>
+                </ul>
+            </li>
+            <li class="nav-section">
+                <div class="nav-section-title">介质类型制作指南</div>
+                <ul>
+                    <li><a href="#medium-handcream">1. 护手霜</a></li>
+                    <li><a href="#medium-bodylotion">2. 身体乳</a></li>
+                    <li><a href="#medium-baseoil">3. 基础油</a></li>
+                    <li><a href="#medium-footbath">4. 泡脚/泡澡</a></li>
+                    <li><a href="#medium-diffuser">5. 扩香</a></li>
+                    <li><a href="#medium-spray">6. 喷雾</a></li>
+                    <li><a href="#medium-rosewater">7. 玫瑰水/纯露</a></li>
+                    <li><a href="#medium-alcohol">8. 95%乙醇</a></li>
+                </ul>
+            </li>
+            <li class="nav-section">
+                <div class="nav-section-title">使用指南</div>
+                <ul>
+                    <li><a href="#frequency-table">制作频率建议</a></li>
+                    <li><a href="#storage-quality">保存与质量控制</a></li>
+                    <li><a href="#faq">常见问题解答</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 侧边栏切换按钮（移动端） -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航菜单">☰</button>
+
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+        <main id="main-content" class="container">
+            <h1>配方制作指南</h1>
+
+        <!-- 安全提示横幅 -->
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: var(--radius-lg); margin: 30px 0; border-left: 4px solid var(--warning-color); box-shadow: var(--shadow-sm);">
+            <h4 style="margin-top: 0; color: var(--warning-text); display: flex; align-items: center; gap: 10px;">
+                <span>安全提示</span>
+            </h4>
+            <ul style="margin: 10px 0 0 0; padding-left: 25px; line-height: 2; color: var(--warning-text);">
+                <li>所有配方必须严格按照安全浓度上限制作，不可擅自增加精油浓度</li>
+                <li>首次使用前务必进行皮肤测试，确认无过敏反应</li>
+                <li>如出现任何不适，立即停用并清洗，必要时咨询专业人士</li>
+                <li>孕妇、哺乳期、儿童及特殊疾病患者需谨慎使用或咨询医生</li>
+            </ul>
+        </div>
+
+        <h3 id="tools-materials">所需工具与材料</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>类别</th>
+                    <th>物品</th>
+                    <th>数量/规格</th>
+                    <th>用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="8"><strong>容器</strong></td>
+                    <td>护手霜软管</td>
+                    <td>50g × 若干</td>
+                    <td>护手霜配方</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃按压瓶</td>
+                    <td>100-200g × 若干</td>
+                    <td>身体乳配方</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃滚珠瓶</td>
+                    <td>10-30ml × 若干</td>
+                    <td>基础油滚珠配方</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃滴管瓶</td>
+                    <td>30-100ml × 若干</td>
+                    <td>基础油按摩油、玫瑰水</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃喷雾瓶</td>
+                    <td>30-100ml × 若干</td>
+                    <td>喷雾配方</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃罐</td>
+                    <td>50-200g × 若干</td>
+                    <td>各种配方通用</td>
+                </tr>
+                <tr>
+                    <td>扩香器</td>
+                    <td>1个</td>
+                    <td>扩香配方（超声波/冷风/热风）</td>
+                </tr>
+                <tr>
+                    <td>小碗/小碟</td>
+                    <td>2-3个</td>
+                    <td>泡脚/泡澡临时调配</td>
+                </tr>
+                <tr>
+                    <td rowspan="7"><strong>工具</strong></td>
+                    <td>玻璃搅拌棒</td>
+                    <td>2-3根</td>
+                    <td>混合精油和基底</td>
+                </tr>
+                <tr>
+                    <td>玻璃量杯</td>
+                    <td>50ml、100ml各1个</td>
+                    <td>测量基础油和基底</td>
+                </tr>
+                <tr>
+                    <td>小玻璃烧杯</td>
+                    <td>20ml × 2-3个</td>
+                    <td>调配精油</td>
+                </tr>
+                <tr>
+                    <td>精准滴管</td>
+                    <td>若干</td>
+                    <td>精确滴取精油（可选）</td>
+                </tr>
+                <tr>
+                    <td>电子秤</td>
+                    <td>1个（精度0.1g）</td>
+                    <td>精确称量基底（可选）</td>
+                </tr>
+                <tr>
+                    <td>标签贴纸</td>
+                    <td>若干</td>
+                    <td>标注配方名称、浓度和日期</td>
+                </tr>
+                <tr>
+                    <td>漏斗</td>
+                    <td>1-2个</td>
+                    <td>方便倒入小口容器（可选）</td>
+                </tr>
+                <tr>
+                    <td rowspan="7"><strong>基础材料</strong></td>
+                    <td>无香护手霜</td>
+                    <td>50g/支</td>
+                    <td>护手霜基底</td>
+                </tr>
+                <tr>
+                    <td>无香身体乳</td>
+                    <td>100-200g/瓶</td>
+                    <td>身体乳基底</td>
+                </tr>
+                <tr>
+                    <td>基础油（荷荷巴油、甜杏仁油等）</td>
+                    <td>100-500ml</td>
+                    <td>按摩油、滚珠、泡脚/泡澡</td>
+                </tr>
+                <tr>
+                    <td>95%乙醇（食品级/药用级）</td>
+                    <td>100-500ml</td>
+                    <td>酒精基喷雾、香水</td>
+                </tr>
+                <tr>
+                    <td>玫瑰水/纯露</td>
+                    <td>100-500ml</td>
+                    <td>玫瑰水配方基底</td>
+                </tr>
+                <tr>
+                    <td>全脂牛奶</td>
+                    <td>适量</td>
+                    <td>泡澡乳化剂（可选）</td>
+                </tr>
+                <tr>
+                    <td>纯净水/蒸馏水</td>
+                    <td>适量</td>
+                    <td>扩香、水基喷雾</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 快速参考卡片 -->
+        <div id="quick-reference" style="background: var(--card-bg); padding: 25px; border-radius: var(--radius-lg); margin: 30px 0; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); scroll-margin-top: 100px;">
+            <h3 style="margin-top: 0; color: var(--accent-color); display: flex; align-items: center; gap: 10px;">
+                <span>快速参考 - 介质类型对比</span>
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 20px;">
+                <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #4a90e2;">
+                    <strong style="color: #2c3e50;">护手霜</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤2% | 保存期: 1个月</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #e17055;">
+                    <strong style="color: #2c3e50;">身体乳</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤2% | 保存期: 2-3个月</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #00b894;">
+                    <strong style="color: #2c3e50;">基础油</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤3% | 保存期: 3-6个月</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #a29bfe;">
+                    <strong style="color: #2c3e50;">泡脚/泡澡</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤0.5% | 现调现用</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #0984e3;">
+                    <strong style="color: #2c3e50;">扩香</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">不计入皮肤接触 | 单次使用</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #fd79a8;">
+                    <strong style="color: #2c3e50;">喷雾</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤3% | 保存期: 1-2个月</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #e84393;">
+                    <strong style="color: #2c3e50;">玫瑰水/纯露</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤1.5% | 保存期: 1个月(冷藏)</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: var(--radius-md); border-left: 3px solid #6c5ce7;">
+                    <strong style="color: #2c3e50;">95%乙醇</strong>
+                    <p style="margin: 8px 0; font-size: 14px; color: var(--secondary-color);">安全浓度: ≤10% | 保存期: 6-12个月</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>按介质类型的制作指南</h3>
+
+        <!-- 护手霜 -->
+        <div id="medium-handcream" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; border-left: 4px solid #4a90e2; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>1. 护手霜 (Hand Cream)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>手部护理、日常保湿、局部理气清神</p>
+                <p><strong>安全浓度上限：</strong>≤2%（总精油浓度）</p>
+                <p><strong>推荐容器：</strong>50g软管或深色玻璃罐</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>准备50g无香护手霜基底，挖出约10g放入小烧杯</li>
+                    <li>按配方依次滴入所需精油（总浓度不超过2%）</li>
+                    <li>用玻璃棒充分搅拌均匀（约2-3分钟），确保精油完全分散</li>
+                    <li>将混合好的精油护手霜倒回原容器</li>
+                    <li>加入剩余40g护手霜，继续搅拌至完全均匀（约2-3分钟）</li>
+                    <li>装入50g软管或深色玻璃容器，标注配方名称和制作日期</li>
+                    <li>常温避光保存，1个月内用完</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>使用前先做皮肤测试，确认无过敏反应</li>
+                    <li>避免接触眼睛和黏膜</li>
+                    <li>如含有光敏性精油（如佛手柑），使用后12小时内避免阳光直射</li>
+                    <li>保存时避免高温和阳光直射</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 身体乳 -->
+        <div id="medium-bodylotion" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-radius: 8px; border-left: 4px solid #e17055; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>2. 身体乳 (Body Lotion)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>全身护理、腿部、躯干、经期护理等大面积使用</p>
+                <p><strong>安全浓度上限：</strong>≤2%（总精油浓度）</p>
+                <p><strong>推荐容器：</strong>深色玻璃按压瓶或深色玻璃罐（100-200g）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>将相应克数的无香身体乳倒入清洁的玻璃量杯</li>
+                    <li>取出约30g身体乳放入小烧杯（便于充分混合）</li>
+                    <li>按配方依次滴入各种精油（总浓度不超过2%）</li>
+                    <li>用玻璃棒充分搅拌3-5分钟，确保精油完全分散</li>
+                    <li>将混合好的部分倒回大量杯中</li>
+                    <li>继续搅拌2-3分钟，使精油在全部基底中均匀分布</li>
+                    <li>装入相应容器，标注配方名称、浓度和制作日期</li>
+                    <li>常温避光保存，2-3个月内用完（经期配方建议立即使用）</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>大面积使用时，注意控制每日精油总量在安全范围内</li>
+                    <li>不同身体乳配方建议轮换使用，避免同时使用导致超标</li>
+                    <li>经期专用配方应在经期前或经期开始时制作，及时使用</li>
+                    <li>避免在破损皮肤上使用</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 基础油（按摩油、滚珠等） -->
+        <div id="medium-baseoil" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border-radius: 8px; border-left: 4px solid #00b894; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>3. 基础油 (Base Oil - 按摩油、滚珠等)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>按摩、滚珠瓶、局部涂抹、穴位按压</p>
+                <p><strong>安全浓度上限：</strong>≤3%（总精油浓度）</p>
+                <p><strong>推荐容器：</strong>深色玻璃滚珠瓶（10-30ml）或深色玻璃滴管瓶（30-100ml）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>选择合适的基础油（如荷荷巴油、甜杏仁油、葡萄籽油等）</li>
+                    <li>将基础油倒入清洁的深色玻璃容器中</li>
+                    <li>按配方依次滴入所需精油（总浓度不超过3%）</li>
+                    <li>盖紧瓶盖，轻轻摇晃2-3分钟，使精油与基础油充分混合</li>
+                    <li>静置5-10分钟，让精油完全溶解</li>
+                    <li>再次摇晃确保均匀，标注配方名称、浓度和制作日期</li>
+                    <li>避光保存，3-6个月内用完</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>基础油应选择冷压、未精炼的优质油品</li>
+                    <li>滚珠瓶使用前需清洁，避免污染</li>
+                    <li>按摩时避开眼周和黏膜部位</li>
+                    <li>使用后如出现皮肤不适，立即停用并清洗</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 泡脚/泡澡 -->
+        <div id="medium-footbath" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); border-radius: 8px; border-left: 4px solid #a29bfe; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>4. 泡脚/泡澡 (Foot Bath / Bath)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>足部护理、全身放松、促进循环</p>
+                <p><strong>安全浓度上限：</strong>≤0.5%（水中稀释，实际吸收率低）</p>
+                <p><strong>推荐容器：</strong>现调现用，无需储存容器</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li><strong>泡脚：</strong>准备5ml荷荷巴油或基础油于小碗中</li>
+                    <li><strong>泡澡：</strong>准备100ml全脂牛奶或基础油于小碗中（牛奶可帮助精油在水中分散）</li>
+                    <li>按配方依次滴入所需精油（总浓度不超过0.5%）</li>
+                    <li>用玻璃棒或小勺搅拌均匀</li>
+                    <li>将混合好的精油溶液倒入已准备好的热水中（水温38-42℃）</li>
+                    <li>用手或工具充分搅拌，使精油在水中分散均匀</li>
+                    <li>立即使用，不可预先混合储存</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>必须先用油或牛奶稀释精油，不可直接将精油滴入水中</li>
+                    <li>泡脚时间建议15-20分钟，泡澡时间建议15-30分钟</li>
+                    <li>水温不宜过高，避免精油挥发过快</li>
+                    <li>使用后注意补充水分，避免脱水</li>
+                    <li>孕妇、高血压、心脏病患者需谨慎使用</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 扩香 -->
+        <div id="medium-diffuser" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); border-radius: 8px; border-left: 4px solid #0984e3; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>5. 扩香 (Diffuser)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>室内香氛、情绪调节、空气净化、助眠</p>
+                <p><strong>安全浓度：</strong>不计入皮肤接触量，按扩香器容量调整</p>
+                <p><strong>推荐容器：</strong>扩香器（超声波、冷风、热风等）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>根据扩香器容量，准备适量纯净水或蒸馏水</li>
+                    <li>按配方滴入所需精油（一般100ml水配3-10滴精油）</li>
+                    <li>轻轻摇晃或搅拌，使精油在水中分散</li>
+                    <li>将混合好的溶液倒入扩香器</li>
+                    <li>开启扩香器，根据需要调节强度</li>
+                    <li>每次使用后清洁扩香器，避免精油残留</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>保持室内通风，避免长时间密闭空间使用</li>
+                    <li>每次使用时间建议1-2小时，避免过度使用</li>
+                    <li>宠物和婴幼儿在场时需谨慎选择精油种类</li>
+                    <li>定期清洁扩香器，防止细菌滋生</li>
+                    <li>避免在睡眠时持续使用，可设置定时关闭</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 喷雾 -->
+        <div id="medium-spray" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); border-radius: 8px; border-left: 4px solid #fd79a8; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>6. 喷雾 (Spray)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>面部喷雾、身体喷雾、环境喷雾、香氛喷雾</p>
+                <p><strong>安全浓度上限：</strong>≤3%（总精油浓度）</p>
+                <p><strong>推荐容器：</strong>深色玻璃喷雾瓶（30-100ml）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>选择基底：纯净水、玫瑰水/纯露，或95%乙醇（根据用途选择）</li>
+                    <li>将基底倒入清洁的深色玻璃喷雾瓶中</li>
+                    <li>按配方依次滴入所需精油（总浓度不超过3%）</li>
+                    <li>如使用水基，可加入少量酒精（5-10%）帮助精油分散</li>
+                    <li>盖紧瓶盖，充分摇晃2-3分钟</li>
+                    <li>静置10-15分钟，让精油充分溶解</li>
+                    <li>再次摇晃确保均匀，标注配方名称、浓度和制作日期</li>
+                    <li>避光保存，1-2个月内用完</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>面部喷雾浓度应更低（≤1%），避免刺激</li>
+                    <li>使用前需充分摇晃，确保精油均匀分散</li>
+                    <li>避免直接喷向眼睛和黏膜</li>
+                    <li>水基喷雾需尽快使用，避免细菌滋生</li>
+                    <li>酒精基喷雾需远离火源</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 玫瑰水/纯露 -->
+        <div id="medium-rosewater" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border-radius: 8px; border-left: 4px solid #e84393; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>7. 玫瑰水/纯露 (Rose Water / Hydrosol)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>面部护理、爽肤水、温和护肤、敏感肌护理</p>
+                <p><strong>安全浓度上限：</strong>≤1.5%（总精油浓度）</p>
+                <p><strong>推荐容器：</strong>深色玻璃喷雾瓶或滴管瓶（50-200ml）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>准备优质玫瑰水或纯露作为基底</li>
+                    <li>将玫瑰水倒入清洁的深色玻璃容器中</li>
+                    <li>按配方依次滴入所需精油（总浓度不超过1.5%）</li>
+                    <li>可加入少量酒精（5%）帮助精油分散（可选）</li>
+                    <li>盖紧瓶盖，充分摇晃3-5分钟</li>
+                    <li>静置15-20分钟，让精油充分溶解</li>
+                    <li>再次摇晃确保均匀，标注配方名称、浓度和制作日期</li>
+                    <li>避光冷藏保存，1个月内用完</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>选择无添加、纯天然的玫瑰水或纯露</li>
+                    <li>浓度应控制在较低水平，适合敏感肌肤</li>
+                    <li>使用前充分摇晃，确保精油均匀分散</li>
+                    <li>建议冷藏保存，延长保质期</li>
+                    <li>如出现沉淀或异味，立即停止使用</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 95%乙醇（香水、喷雾等） -->
+        <div id="medium-alcohol" class="medium-section" style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; border-left: 4px solid #6c5ce7; scroll-margin-top: 100px;">
+            <h4 style="margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span>8. 95%乙醇 (Alcohol - 香水、喷雾等)</span>
+            </h4>
+            <div style="background-color: rgba(255,255,255,0.9); padding: 20px; margin: 15px 0; border-radius: 6px;">
+                <p><strong>适用场景：</strong>香水制作、香氛喷雾、环境喷雾、快速挥发配方</p>
+                <p><strong>安全浓度上限：</strong>≤10%（总精油浓度，但需根据用途调整）</p>
+                <p><strong>推荐容器：</strong>深色玻璃喷雾瓶或滴管瓶（10-100ml）</p>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">制作步骤：</h5>
+                <ol style="padding-left: 20px; line-height: 2.2;">
+                    <li>准备95%食品级或药用级乙醇（酒精）</li>
+                    <li>将乙醇倒入清洁的深色玻璃容器中</li>
+                    <li>按配方依次滴入所需精油（总浓度根据用途调整，香水可较高，喷雾建议≤5%）</li>
+                    <li>盖紧瓶盖，充分摇晃3-5分钟，使精油完全溶解</li>
+                    <li>静置24-48小时，让精油与酒精充分融合（熟化过程）</li>
+                    <li>再次摇晃确保均匀，标注配方名称、浓度和制作日期</li>
+                    <li>避光保存，6-12个月内用完</li>
+                </ol>
+                
+                <h5 style="margin-top: 20px; color: #34495e;">注意事项：</h5>
+                <ul style="padding-left: 20px; line-height: 2;">
+                    <li>必须使用高纯度乙醇，避免杂质影响</li>
+                    <li>酒精易燃，远离火源和高温环境</li>
+                    <li>避免接触眼睛和黏膜，可能引起刺激</li>
+                    <li>皮肤敏感者需谨慎使用，建议先做测试</li>
+                    <li>香水制作建议熟化2-4周，让香气更融合</li>
+                    <li>保存时确保容器密封，防止酒精挥发</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 id="frequency-table">制作频率建议</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>介质类型</th>
+                    <th>推荐份量</th>
+                    <th>使用周期</th>
+                    <th>制作频率</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>护手霜</td>
+                    <td>50g</td>
+                    <td>约1个月</td>
+                    <td>每月制作一次</td>
+                </tr>
+                <tr>
+                    <td>身体乳（日常）</td>
+                    <td>100-200g</td>
+                    <td>约2-3个月</td>
+                    <td>每2-3个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>身体乳（经期）</td>
+                    <td>100-150g</td>
+                    <td>每周期3-5天</td>
+                    <td>每个经期前/开始时制作</td>
+                </tr>
+                <tr>
+                    <td>基础油（按摩油）</td>
+                    <td>30-100ml</td>
+                    <td>约3-6个月</td>
+                    <td>每3-6个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>基础油（滚珠）</td>
+                    <td>10-30ml</td>
+                    <td>约1-2个月</td>
+                    <td>每1-2个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>泡脚/泡澡</td>
+                    <td>每次现调</td>
+                    <td>单次使用</td>
+                    <td>使用时现场调配</td>
+                </tr>
+                <tr>
+                    <td>扩香</td>
+                    <td>按扩香器容量</td>
+                    <td>单次使用</td>
+                    <td>每次使用前调配</td>
+                </tr>
+                <tr>
+                    <td>喷雾（水基）</td>
+                    <td>30-100ml</td>
+                    <td>约1-2个月</td>
+                    <td>每1-2个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>喷雾（酒精基）</td>
+                    <td>30-100ml</td>
+                    <td>约6-12个月</td>
+                    <td>每6-12个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>玫瑰水/纯露</td>
+                    <td>50-200ml</td>
+                    <td>约1个月</td>
+                    <td>每月制作一次</td>
+                </tr>
+                <tr>
+                    <td>95%乙醇（香水）</td>
+                    <td>10-100ml</td>
+                    <td>约6-12个月</td>
+                    <td>每6-12个月制作一次（需熟化）</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 id="storage-quality">保存与质量控制</h3>
+        <div style="padding: 20px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin-top: 0;">通用储存条件</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li><strong>避光：</strong>使用深色玻璃容器或存放于暗处，避免阳光直射</li>
+                <li><strong>温度：</strong>15-25℃室温保存，避免高温和冰箱（玫瑰水/纯露除外，需冷藏）</li>
+                <li><strong>密封：</strong>使用后立即盖紧瓶盖，减少空气接触，防止氧化</li>
+                <li><strong>干燥：</strong>避免水分进入，保持容器和取用工具干燥</li>
+                <li><strong>远离火源：</strong>酒精基配方需远离火源和高温环境</li>
+            </ul>
+
+            <h4>按介质类型的保存要求</h4>
+            <table style="width: 100%; margin: 15px 0; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #e0e0e0;">
+                        <th style="padding: 10px; border: 1px solid #ccc;">介质类型</th>
+                        <th style="padding: 10px; border: 1px solid #ccc;">保存温度</th>
+                        <th style="padding: 10px; border: 1px solid #ccc;">保存期限</th>
+                        <th style="padding: 10px; border: 1px solid #ccc;">特殊要求</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">护手霜</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">1个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">身体乳（日常）</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">2-3个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">身体乳（经期）</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">立即使用</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">剩余可保存至下个周期</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">基础油</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">3-6个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封，避免高温</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">泡脚/泡澡</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">-</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">现调现用</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">不可储存</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">扩香</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">-</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">单次使用</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">使用后清洁扩香器</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">喷雾（水基）</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">1-2个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封，尽快使用</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">喷雾（酒精基）</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">6-12个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封，远离火源</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">玫瑰水/纯露</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">冷藏2-8℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">1个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封，冷藏保存</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc;">95%乙醇</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">室温15-25℃</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">6-12个月</td>
+                        <td style="padding: 8px; border: 1px solid #ccc;">避光密封，远离火源，防止挥发</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>质量检查</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li><strong>气味：</strong>如出现酸败、刺鼻异味或明显变质气味，立即停止使用</li>
+                <li><strong>质地：</strong>如出现分层、结块、凝固或明显变化，停止使用</li>
+                <li><strong>颜色：</strong>如明显变色（如变深、发黄、浑浊），慎用或停止使用</li>
+                <li><strong>皮肤反应：</strong>如使用后出现红肿、瘙痒、刺痛等不适，立即停用并清洗</li>
+                <li><strong>容器检查：</strong>检查容器是否有破损、泄漏，确保密封良好</li>
+            </ul>
+
+            <h4>使用期限提醒</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li>所有配方制作后应在容器上标注制作日期</li>
+                <li>超过保存期限的配方不建议继续使用</li>
+                <li>如对配方质量有疑虑，宁可丢弃也不要冒险使用</li>
+                <li>定期检查库存，优先使用较早制作的配方</li>
+            </ul>
+        </div>
+
+        <h3 id="faq">常见问题解答</h3>
+        <div style="margin: 30px 0;">
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q1: 为什么一定要用深色玻璃容器?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 精油对光敏感,深色玻璃可以阻挡紫外线,防止精油氧化变质。塑料容器会被精油溶解,释放有害物质。</p>
+            </div>
+
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q2: 可以增加精油浓度来加强效果吗?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 不建议。本方案已经过精确计算,在安全范围内达到最佳效果。擅自增加浓度可能导致皮肤刺激或其他不良反应。</p>
+            </div>
+
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q3: 配方中的精油可以随意替换吗?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 不建议。每个配方都是根据你的具体症状和精油功效精心设计的,随意替换可能影响效果甚至带来风险。</p>
+            </div>
+
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q4: 为什么身体乳要轮换使用?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 为了控制每日精油总量在安全范围内。两种身体乳同时使用会超标,轮换使用既保证效果又确保安全。</p>
+            </div>
+
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q5: 多久能看到效果?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 循环和睡眠问题通常2-4周有改善,脾肾调理需6-8周,痛经改善需2-3个周期。坚持使用很重要。</p>
+            </div>
+
+            <div class="faq-item" style="background: var(--card-bg); padding: 20px; margin: 15px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--accent-color);">
+                <h4 style="margin-top: 0; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>Q6: 使用期间需要避免什么?</span>
+                    <span style="margin-left: auto; font-size: 18px;">▼</span>
+                </h4>
+                <p style="margin: 10px 0 0 0; color: var(--secondary-color); line-height: 1.8;">A: 避免生冷辛辣食物,保证充足饮水(每日1500-2000ml),规律作息,避免熬夜。</p>
+            </div>
+        </div>
+
+        <!-- 结尾 -->
+        <div class="footer">
+            <p>
+                本指南涵盖所有介质类型的制作方法<br>
+                建议连续使用6-8周后评估效果<br>
+                如有任何不适,请立即停用并咨询专业人士<br><br>
+                <strong>制定日期:2025年11月</strong>
+            </p>
+        </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script>
+        // FAQ 展开/折叠功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const h4 = item.querySelector('h4');
+                const p = item.querySelector('p');
+                const arrow = h4.querySelector('span:last-child');
+                
+                // 初始状态：第一个展开
+                if (item === faqItems[0]) {
+                    p.style.display = 'block';
+                    arrow.textContent = '▲';
+                }
+                
+                h4.addEventListener('click', function() {
+                    const isOpen = p.style.display === 'block';
+                    p.style.display = isOpen ? 'none' : 'block';
+                    arrow.textContent = isOpen ? '▼' : '▲';
+                });
+            });
+            
+            // 侧边栏导航功能
+            const sidebarNav = document.getElementById('sidebarNav');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const navLinks = sidebarNav.querySelectorAll('a');
+            
+            // 移动端切换按钮
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebarNav.classList.toggle('open');
+                });
+            }
+            
+            // 点击导航链接后，移动端自动关闭侧边栏
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 1024) {
+                        sidebarNav.classList.remove('open');
+                    }
+                });
+            });
+            
+            // 高亮当前活动导航项
+            function updateActiveNav() {
+                const sections = document.querySelectorAll('[id]');
+                const scrollPos = window.scrollY + 150;
+                
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            // 平滑滚动
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        const offsetTop = target.offsetTop - 80; // 考虑固定导航栏高度
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // 滚动时更新活动导航项
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav(); // 初始更新
+            
+            // 点击外部区域关闭移动端侧边栏
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 1024) {
+                    if (!sidebarNav.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                        sidebarNav.classList.remove('open');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

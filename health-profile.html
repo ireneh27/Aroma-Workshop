@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="您的信息档案 - 个性化芳疗方案">
+    <title>您的信息档案 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .questionnaire-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .question-section {
+            background: var(--card-bg);
+            padding: var(--spacing-xl);
+            margin: var(--spacing-lg) 0;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+        .question-section h3 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-lg);
+            color: var(--primary-color);
+            border-left: 4px solid var(--accent-color);
+            padding-left: var(--spacing-md);
+        }
+        .question-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        .question-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--primary-color);
+        }
+        .checkbox-group, .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        .checkbox-item, .radio-item {
+            display: flex;
+            align-items: flex-start;
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .checkbox-item:hover, .radio-item:hover {
+            background: var(--border-color-light);
+        }
+        .checkbox-item input, .radio-item input {
+            margin-right: 10px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        .checkbox-item label, .radio-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+        .form-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            margin: var(--spacing-2xl) 0;
+            flex-wrap: wrap;
+        }
+        .saved-indicator {
+            background: var(--success-color);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-lg) 0;
+            text-align: center;
+            display: none;
+        }
+        .saved-indicator.show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-xl);
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        /* 左侧大纲导航 */
+        .sidebar-nav {
+            position: fixed;
+            left: 0;
+            top: 60px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color-dark);
+            border-radius: 3px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        .sidebar-nav h3 {
+            padding: 0 20px 15px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .sidebar-nav a:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--accent-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .main-wrapper {
+            margin-left: 280px;
+            padding: 20px;
+            max-width: calc(100% - 280px);
+        }
+        
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            left: 20px;
+            top: 70px;
+            z-index: 101;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            font-size: 18px;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--accent-gradient-hover);
+        }
+        
+        .question-section {
+            scroll-margin-top: 100px;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar-nav {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar-nav.open {
+                transform: translateX(0);
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media print {
+            .sidebar-nav, .back-to-top, .fixed-nav, .sidebar-toggle {
+                display: none !important;
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html" aria-current="page">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: var(--spacing-sm) var(--spacing-md); color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <!-- 侧边栏导航 -->
+    <nav class="sidebar-nav" id="sidebarNav" role="navigation" aria-label="页面大纲导航">
+        <h3>目录</h3>
+        <ul>
+            <li><a href="#basic-info">基本信息</a></li>
+            <li><a href="#circulation">循环系统</a></li>
+            <li><a href="#sleep">睡眠质量</a></li>
+            <li><a href="#digestive">消化系统</a></li>
+            <li><a href="#gynecological">妇科健康</a></li>
+            <li><a href="#constitution">体质基础</a></li>
+            <li><a href="#other-symptoms">其他症状</a></li>
+        </ul>
+    </nav>
+
+    <!-- 侧边栏切换按钮（移动端） -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航菜单">☰</button>
+
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+        <main id="main-content" class="container">
+        <h1>您的信息档案</h1>
+        <p class="subtitle">请如实填写以下问题，以便为您推荐最适合的精油配方方案</p>
+
+        <!-- 登录提示 -->
+        <div id="loginPrompt" class="formula-builder mb-xl" style="display: none;">
+            <h3 style="color: white; margin-top: 0;">登录以保存您的健康档案</h3>
+            <p style="margin-bottom: var(--spacing-md); opacity: 0.95;">登录后，您的健康数据将安全保存到您的账户，方便随时查看和更新。</p>
+            <a href="login.html" class="btn btn-primary" style="background: white; color: #667eea; text-decoration: none; display: inline-block;">
+                立即登录/注册
+            </a>
+        </div>
+
+        <div class="saved-indicator" id="savedIndicator">
+            ✓ 问卷数据已保存
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <form class="questionnaire-form" id="healthQuestionnaire" onsubmit="return false;">
+            <!-- 基本信息 -->
+            <div id="basic-info" class="question-section">
+                <h3>基本信息</h3>
+                <div class="question-group">
+                    <label class="question-label" for="age">年龄</label>
+                    <input type="number" id="age" name="age" min="18" max="100" 
+                           style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;"
+                           aria-label="年龄">
+                </div>
+                <div class="question-group">
+                    <label class="question-label">性别</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="gender-female" name="gender" value="female" required>
+                            <label for="gender-female">女性</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="gender-male" name="gender" value="male" required>
+                            <label for="gender-male">男性</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-group" id="pregnancy-section">
+                    <label class="question-label">是否怀孕或哺乳期</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="pregnancy-no" name="pregnancy" value="no">
+                            <label for="pregnancy-no">否</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="pregnancy-yes" name="pregnancy" value="yes">
+                            <label for="pregnancy-yes">是（怀孕）</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="pregnancy-nursing" name="pregnancy" value="nursing">
+                            <label for="pregnancy-nursing">是（哺乳期）</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 循环系统问题 -->
+            <div id="circulation" class="question-section">
+                <h3>循环系统</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择您遇到的循环相关问题（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="circulation-cold-feet" name="circulation" value="cold-feet">
+                            <label for="circulation-cold-feet">手脚冰凉，特别是脚心发凉</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="circulation-hot-hands" name="circulation" value="hot-hands">
+                            <label for="circulation-hot-hands">手心发热</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="circulation-poor" name="circulation" value="poor">
+                            <label for="circulation-poor">末梢循环不良</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="circulation-none" name="circulation" value="none">
+                            <label for="circulation-none">无循环问题</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 睡眠问题 -->
+            <div id="sleep" class="question-section">
+                <h3>睡眠质量</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择您遇到的睡眠相关问题（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sleep-poor" name="sleep" value="poor">
+                            <label for="sleep-poor">睡眠质量差，难以入睡</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sleep-wake" name="sleep" value="wake">
+                            <label for="sleep-wake">容易醒来，睡眠浅</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sleep-tinnitus" name="sleep" value="tinnitus">
+                            <label for="sleep-tinnitus">耳鸣</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sleep-anxiety" name="sleep" value="anxiety">
+                            <label for="sleep-anxiety">睡前焦虑、思绪过多</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sleep-none" name="sleep" value="none">
+                            <label for="sleep-none">睡眠良好</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消化系统问题 -->
+            <div id="digestive" class="question-section">
+                <h3>消化系统</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择您遇到的消化相关问题（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="digestive-burp" name="digestive" value="burp">
+                            <label for="digestive-burp">经常打嗝</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="digestive-bloating" name="digestive" value="bloating">
+                            <label for="digestive-bloating">腹胀、消化不良</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="digestive-teeth" name="digestive" value="teeth">
+                            <label for="digestive-teeth">舌边有齿痕</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="digestive-appetite" name="digestive" value="appetite">
+                            <label for="digestive-appetite">食欲不振</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="digestive-none" name="digestive" value="none">
+                            <label for="digestive-none">消化系统正常</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 妇科问题（仅女性） -->
+            <div id="gynecological" class="question-section">
+                <h3>妇科健康（女性）</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择您遇到的妇科相关问题（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gynecological-pain" name="gynecological" value="pain">
+                            <label for="gynecological-pain">痛经</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gynecological-irregular" name="gynecological" value="irregular">
+                            <label for="gynecological-irregular">月经不规律</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gynecological-blood" name="gynecological" value="blood">
+                            <label for="gynecological-blood">舌下血瘀、血块</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gynecological-cold" name="gynecological" value="cold">
+                            <label for="gynecological-cold">宫寒、手脚冰凉</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gynecological-none" name="gynecological" value="none">
+                            <label for="gynecological-none">无妇科问题</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 体质基础 -->
+            <div id="constitution" class="question-section">
+                <h3>体质基础</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择符合您体质的描述（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-spleen" name="constitution" value="spleen">
+                            <label for="constitution-spleen">脾虚（容易疲劳、消化不良）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-kidney" name="constitution" value="kidney">
+                            <label for="constitution-kidney">肾虚（腰酸、耳鸣、怕冷）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-both" name="constitution" value="both">
+                            <label for="constitution-both">脾肾两虚</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-qi" name="constitution" value="qi">
+                            <label for="constitution-qi">气虚（容易出汗、气短）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-blood" name="constitution" value="blood">
+                            <label for="constitution-blood">血虚（面色苍白、头晕）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="constitution-none" name="constitution" value="none">
+                            <label for="constitution-none">体质良好</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他症状 -->
+            <div id="other-symptoms" class="question-section">
+                <h3>其他症状</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择其他相关症状（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other-stress" name="other" value="stress">
+                            <label for="other-stress">工作压力大、情绪紧张</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other-fatigue" name="other" value="fatigue">
+                            <label for="other-fatigue">容易疲劳、精力不足</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other-mood" name="other" value="mood">
+                            <label for="other-mood">情绪低落、易怒</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other-headache" name="other" value="headache">
+                            <label for="other-headache">经常头痛</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other-skin" name="other" value="skin">
+                            <label for="other-skin">皮肤敏感</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 特殊注意事项 -->
+            <div class="question-section">
+                <h3>特殊注意事项</h3>
+                <div class="question-group">
+                    <label class="question-label">请选择适用的注意事项（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="caution-hypertension" name="caution" value="hypertension">
+                            <label for="caution-hypertension">高血压</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="caution-epilepsy" name="caution" value="epilepsy">
+                            <label for="caution-epilepsy">癫痫</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="caution-sensitive" name="caution" value="sensitive">
+                            <label for="caution-sensitive">敏感肌肤</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="caution-none" name="caution" value="none">
+                            <label for="caution-none">无特殊注意事项</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日用品香味偏好 -->
+            <div class="question-section">
+                <h3>日用品香味偏好</h3>
+                <div class="question-group">
+                    <label class="question-label">您平时使用的日用品（如洗发水、沐浴露、护肤品等）主要是什么香味类别？（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-floral" name="fragrance" value="floral">
+                            <label for="fragrance-floral">花香类（玫瑰、薰衣草、茉莉等）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-citrus" name="fragrance" value="citrus">
+                            <label for="fragrance-citrus">柑橘类（柠檬、甜橙、佛手柑等）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-woody" name="fragrance" value="woody">
+                            <label for="fragrance-woody">木质类（檀香、雪松、丝柏等）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-herbal" name="fragrance" value="herbal">
+                            <label for="fragrance-herbal">草本类（薄荷、迷迭香、广藿香等）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-spicy" name="fragrance" value="spicy">
+                            <label for="fragrance-spicy">辛香类（姜、肉桂、艾草等）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fragrance-none" name="fragrance" value="none">
+                            <label for="fragrance-none">无香味偏好或使用无香产品</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 使用方式偏好 -->
+            <div class="question-section">
+                <h3>使用方式偏好</h3>
+                <div class="question-group">
+                    <label class="question-label">您希望使用哪些方式的精油配方？（可多选）</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="usage-handcream" name="usage" value="handcream">
+                            <label for="usage-handcream">护手霜（便于携带，随时使用）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="usage-bodylotion" name="usage" value="bodylotion">
+                            <label for="usage-bodylotion">身体乳（大面积使用，滋润保湿）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="usage-footbath" name="usage" value="footbath">
+                            <label for="usage-footbath">泡脚/泡澡（放松身心，促进循环）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="usage-diffuser" name="usage" value="diffuser">
+                            <label for="usage-diffuser">扩香（空气扩散，通过嗅觉发挥作用）</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="usage-spray" name="usage" value="spray">
+                            <label for="usage-spray">喷雾（方便携带，快速使用）</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary btn-large" onclick="saveQuestionnaire()">
+                    保存问卷
+                </button>
+                <button type="button" class="btn btn-success btn-large" onclick="submitQuestionnaire()">
+                    提交并查看建议
+                </button>
+                <button type="button" class="btn btn-primary btn-large" onclick="loadQuestionnaire()">
+                    加载已保存数据
+                </button>
+            </div>
+        </form>
+
+        <div class="footer">
+            <p>
+                您的健康信息将被安全保存，仅用于为您推荐个性化配方<br>
+                建议定期更新问卷以获取最新的配方建议<br><br>
+                <strong>制定日期:2025年11月</strong>
+            </p>
+        </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="questionnaire.js"></script>
+    <script>
+        // 更新登录提示显示
+        function updateLoginPrompt() {
+            if (typeof window.authSystem === 'undefined') return;
+            
+            const loginPrompt = document.getElementById('loginPrompt');
+            if (loginPrompt) {
+                if (window.authSystem.isUserLoggedIn()) {
+                    loginPrompt.style.display = 'none';
+                } else {
+                    loginPrompt.style.display = 'block';
+                }
+            }
+        }
+        
+        // 侧边栏导航功能
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLoginPrompt();
+            // 监听用户状态变化
+            setInterval(updateLoginPrompt, 2000);
+            
+            const sidebarNav = document.getElementById('sidebarNav');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const navLinks = sidebarNav.querySelectorAll('a');
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebarNav.classList.toggle('open');
+                });
+            }
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 1024) {
+                        sidebarNav.classList.remove('open');
+                    }
+                });
+            });
+            
+            // 高亮当前活动导航项
+            function updateActiveNav() {
+                const sections = document.querySelectorAll('.question-section[id]');
+                const scrollPos = window.scrollY + 150;
+                
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            // 平滑滚动
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        const offsetTop = target.offsetTop - 80;
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // 滚动时更新活动导航项
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav();
+            
+            // 点击外部区域关闭移动端侧边栏
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 1024) {
+                    if (!sidebarNav.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                        sidebarNav.classList.remove('open');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

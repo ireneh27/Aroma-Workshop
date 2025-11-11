@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="您的私人配方库 - 本地存储的配方管理系统">
+    <title>您的私人配方库 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .recipe-db-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-xl) var(--spacing-lg);
+        }
+        
+        /* Header Section */
+        .db-header {
+            background: var(--card-bg);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .db-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+        }
+        
+        .db-header h1 {
+            margin-bottom: var(--spacing-sm);
+            border: none;
+            padding: 0;
+        }
+        
+        .db-header .subtitle {
+            color: var(--secondary-color);
+            font-size: var(--text-sm);
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.6;
+        }
+        
+        .db-toolbar {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-lg);
+        }
+        
+        /* Inventory Section */
+        .inventory-section {
+            background: var(--card-bg);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        
+        .inventory-header {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .inventory-header h2 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--text-lg);
+            color: var(--primary-color);
+        }
+        
+        .inventory-description {
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+            margin: 0;
+            line-height: 1.4;
+        }
+        
+        .inventory-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .inventory-card {
+            padding: var(--spacing-sm);
+            background: var(--bg-color);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color-light);
+        }
+        
+        .inventory-card-header {
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .inventory-card-header h3 {
+            margin: 0;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .popular-items-compact {
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .popular-items-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 4px;
+        }
+        
+        .popular-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 4px;
+        }
+        
+        .popular-item-btn {
+            padding: 4px 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--primary-color);
+            text-align: center;
+            user-select: none;
+        }
+        
+        .popular-item-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        
+        .popular-item-btn.added {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: var(--success-color);
+        }
+        
+        .custom-add-compact {
+            margin-top: var(--spacing-xs);
+        }
+        
+        .oil-select-compact {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            transition: var(--transition);
+            background: var(--card-bg);
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+        
+        .oil-select-compact:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .custom-input-group-compact {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .custom-input-compact {
+            flex: 1;
+            padding: 4px 6px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            transition: var(--transition);
+        }
+        
+        .custom-input-compact:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .inventory-table-section {
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .inventory-table-section h3 {
+            margin: 0 0 var(--spacing-xs) 0;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .inventory-table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color-light);
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .inventory-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: var(--text-xs);
+        }
+        
+        .inventory-table th {
+            padding: 6px 12px;
+            text-align: left;
+            font-weight: 600;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 11px;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .inventory-table td {
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--border-color-light);
+            vertical-align: top;
+        }
+        
+        @media (max-width: 768px) {
+            .inventory-table {
+                min-width: 800px;
+            }
+            
+            .inventory-table th,
+            .inventory-table td {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            
+            .inventory-production-date-input {
+                width: 90px;
+                font-size: 9px;
+            }
+        }
+        
+        .inventory-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .inventory-table tbody tr:hover {
+            background: var(--bg-color);
+        }
+        
+        .inventory-oil-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .inventory-oil-link:hover {
+            text-decoration: underline;
+            color: var(--accent-gradient-hover);
+        }
+        
+        .inventory-type-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .inventory-type-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .inventory-production-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .inventory-production-date-input {
+            padding: 2px 4px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            width: 100px;
+        }
+        
+        .inventory-production-date-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .inventory-shelf-life {
+            font-size: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .inventory-category-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .inventory-category-badge.oils {
+            background: var(--info-bg);
+            color: var(--info-text);
+        }
+        
+        .inventory-category-badge.carriers {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+        
+        .inventory-category-badge.solvents {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+        
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--primary-color);
+        }
+        
+        .chip:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .chip .remove-chip {
+            margin-left: var(--spacing-xs);
+            opacity: 0.7;
+            font-weight: 700;
+        }
+        
+        .chip:hover .remove-chip {
+            opacity: 1;
+        }
+        
+        details {
+            margin-top: var(--spacing-lg);
+        }
+        
+        details summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--accent-color);
+            padding: var(--spacing-md);
+            background: var(--bg-color);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            list-style: none;
+        }
+        
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        details summary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        details[open] summary {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .inventory-form-grid {
+            margin-top: var(--spacing-lg);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .inventory-form-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .inventory-form-item label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-sm);
+            font-size: var(--text-sm);
+        }
+        
+        .inventory-form-item .input-group {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        
+        .inventory-form-item input {
+            flex: 1;
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+        }
+        
+        .inventory-form-item input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Recipe Editor */
+        .recipe-editor {
+            background: var(--card-bg);
+            padding: 0;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.3s ease-out;
+            overflow: hidden;
+        }
+        
+        .recipe-editor-header {
+            background: var(--accent-gradient);
+            padding: var(--spacing-xl);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .recipe-editor-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+        
+        .recipe-editor h2 {
+            margin: 0;
+            font-size: var(--text-2xl);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .recipe-editor-subtitle {
+            margin-top: var(--spacing-sm);
+            font-size: var(--text-sm);
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .recipe-editor-body {
+            padding: var(--spacing-xl);
+        }
+        
+        .form-section {
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid var(--border-color-light);
+        }
+        
+        .form-section-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+            font-weight: 600;
+        }
+        
+        .form-section-title {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .form-section-description {
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+            margin-top: var(--spacing-xs);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-sm);
+            font-size: var(--text-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .form-group label .required {
+            color: var(--error-color);
+            font-size: var(--text-xs);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+            background: var(--card-bg);
+            color: var(--primary-color);
+            font-family: inherit;
+        }
+        
+        .form-group input:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            border-color: var(--border-color-dark);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+        
+        .form-group .input-hint {
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+            margin-top: var(--spacing-xs);
+            line-height: 1.4;
+        }
+        
+        .oil-rows-container {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .oil-rows-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .oil-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr auto;
+            gap: var(--spacing-md);
+            align-items: end;
+            padding: var(--spacing-md);
+            background: var(--bg-color);
+            border: 2px solid var(--border-color-light);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .oil-row:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-2px);
+        }
+        
+        .oil-row-number {
+            position: absolute;
+            top: -8px;
+            left: var(--spacing-md);
+            background: var(--accent-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-xs);
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .oil-row select,
+        .oil-row input {
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+            background: var(--card-bg);
+            width: 100%;
+        }
+        
+        .oil-row select:focus,
+        .oil-row input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .oil-row .remove-oil-btn {
+            padding: var(--spacing-md);
+            min-width: 48px;
+            height: 48px;
+            background: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-lg);
+        }
+        
+        .oil-row .remove-oil-btn:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .oil-row .remove-oil-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .add-oil-btn {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--bg-color);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--accent-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            font-size: var(--text-base);
+        }
+        
+        .add-oil-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .safety-panel {
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            border: 2px solid var(--border-color-light);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .safety-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+        }
+        
+        .safety-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+            gap: var(--spacing-md);
+        }
+        
+        .safety-panel-label {
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .safety-panel-content {
+            font-size: var(--text-sm);
+            color: var(--primary-color);
+            line-height: 1.8;
+            white-space: pre-line;
+            background: var(--card-bg);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color-light);
+        }
+        
+        .safety-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: var(--shadow-xs);
+        }
+        
+        .safety-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .safety-green {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+        
+        .safety-yellow {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+        
+        .safety-red {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-xl);
+            border-top: 2px solid var(--border-color-light);
+        }
+        
+        .form-actions .btn {
+            min-width: 120px;
+        }
+        
+        @media (max-width: 768px) {
+            .recipe-editor-header {
+                padding: var(--spacing-lg);
+            }
+            
+            .recipe-editor-body {
+                padding: var(--spacing-lg);
+            }
+            
+            .form-section {
+                margin-bottom: var(--spacing-xl);
+            }
+            
+            .form-section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-sm);
+            }
+            
+            .oil-row {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+                padding: var(--spacing-sm);
+            }
+            
+            .oil-row-number {
+                position: static;
+                margin-bottom: var(--spacing-xs);
+                align-self: flex-start;
+            }
+            
+            .oil-row .remove-oil-btn {
+                width: 100%;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .form-actions .btn {
+                width: 100%;
+            }
+            
+            .safety-panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .safety-panel-header > div:last-child {
+                align-self: flex-end;
+            }
+        }
+        
+        /* Recipe List */
+        .recipe-list {
+            background: var(--card-bg);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        
+        .recipe-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-lg);
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .recipe-list-header h2 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--text-xl);
+            color: var(--primary-color);
+        }
+        
+        .recipe-list-subtitle {
+            font-size: var(--text-sm);
+            color: var(--secondary-color);
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .recipe-list-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: var(--spacing-xs);
+            background: var(--bg-color);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        
+        .view-toggle-btn {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            color: var(--secondary-color);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .view-toggle-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--primary-color);
+        }
+        
+        .view-toggle-btn.active {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        .recipe-count {
+            font-size: var(--text-sm);
+            color: var(--secondary-color);
+            margin-left: var(--spacing-md);
+        }
+        
+        .recipe-count strong {
+            color: var(--accent-color);
+            font-size: var(--text-base);
+        }
+        
+        .search-filter-container {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+            background: var(--card-bg);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .filter-container {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .filter-container label {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: var(--text-sm);
+            white-space: nowrap;
+        }
+        
+        .filter-container select {
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+            background: var(--card-bg);
+            min-width: 200px;
+        }
+        
+        .filter-container select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .recipe-table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        
+        .recipe-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            background: var(--card-bg);
+            table-layout: fixed; /* 固定表格布局 */
+        }
+        
+        .recipe-table thead {
+            background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-secondary) 100%);
+        }
+        
+        .recipe-table th {
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            font-weight: 600;
+            font-size: var(--text-sm);
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-secondary) 100%);
+            z-index: 10;
+        }
+        
+        /* 固定各列宽度比例 */
+        .recipe-table th:nth-child(1),
+        .recipe-table td:nth-child(1) {
+            width: 18%; /* 名称（包含日期和介质类型） */
+        }
+        
+        .recipe-table th:nth-child(2),
+        .recipe-table td:nth-child(2) {
+            width: 10%; /* 成分（精油列表，可能多行） */
+        }
+        
+        .recipe-table th:nth-child(3),
+        .recipe-table td:nth-child(3) {
+            width: 7%; /* 浓度（数字+%，可能包含警告） */
+        }
+        
+        .recipe-table th:nth-child(4),
+        .recipe-table td:nth-child(4) {
+            width: 7%; /* 容量（配方总量） */
+        }
+        
+        .recipe-table th:nth-child(5),
+        .recipe-table td:nth-child(5) {
+            width: 10%; /* 基础油/溶剂 */
+        }
+        
+        .recipe-table th:nth-child(6),
+        .recipe-table td:nth-child(6) {
+            width: 22%; /* 用途/备注（可能较长） */
+        }
+        
+        .recipe-table th:nth-child(7),
+        .recipe-table td:nth-child(7) {
+            width: 12%; /* 安全（标签） */
+        }
+        
+        .recipe-table th:nth-child(8),
+        .recipe-table td:nth-child(8) {
+            width: 14%; /* 操作（3个按钮） */
+        }
+        
+        .recipe-table td {
+            padding: var(--spacing-lg);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color-light);
+            font-size: var(--text-sm);
+            color: var(--primary-color);
+            vertical-align: top;
+        }
+        
+        .recipe-table tbody tr {
+            transition: var(--transition);
+        }
+        
+        .recipe-table tbody tr:hover {
+            background: var(--bg-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .recipe-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .recipe-table tbody tr.has-inventory {
+            background: rgba(16, 185, 129, 0.03);
+            border-left: 3px solid var(--success-color);
+        }
+        
+        .recipe-table tbody tr.unsafe-concentration {
+            background: rgba(239, 68, 68, 0.03);
+        }
+        
+        .recipe-table tbody tr.unsafe-concentration td {
+            border-left: 3px solid var(--error-color);
+        }
+        
+        .recipe-table tbody tr.has-inventory td:first-child::before {
+            content: '✓';
+            color: var(--success-color);
+            margin-right: var(--spacing-xs);
+            font-weight: 600;
+            font-size: var(--text-base);
+        }
+        
+        /* 卡片视图样式 */
+        .recipe-cards-view {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .recipe-cards-view.active {
+            display: grid;
+        }
+        
+        .recipe-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .recipe-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .recipe-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-color);
+        }
+        
+        .recipe-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .recipe-card.has-inventory {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .recipe-card.unsafe-concentration {
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .recipe-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+            gap: var(--spacing-md);
+        }
+        
+        .recipe-card-title {
+            flex: 1;
+        }
+        
+        .recipe-card-name {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+            line-height: 1.3;
+        }
+        
+        .recipe-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+        }
+        
+        .recipe-card-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .recipe-card-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-xs);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .recipe-card-content {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .recipe-card-section {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .recipe-card-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .recipe-card-label {
+            font-size: var(--text-xs);
+            font-weight: 600;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .recipe-card-value {
+            font-size: var(--text-sm);
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+        
+        .recipe-card-oils {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .recipe-card-oil-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+        
+        .recipe-card-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color-light);
+            margin-top: var(--spacing-md);
+        }
+        
+        .recipe-card-actions .btn {
+            flex: 1;
+            font-size: var(--text-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+        }
+        
+        .recipe-table-wrapper.hidden {
+            display: none;
+        }
+        
+        /* 可编辑名称样式 */
+        .recipe-name-editable {
+            cursor: pointer;
+            position: relative;
+            padding: 2px 4px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        
+        .recipe-name-editable:hover {
+            background: var(--bg-color);
+            padding: 2px 4px;
+        }
+        
+        .recipe-name-editable:hover::after {
+            content: '双击编辑';
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            animation: fadeInTooltip 0.2s ease-out 0.3s forwards;
+            pointer-events: none;
+        }
+        
+        .recipe-name-editable.editing {
+            background: transparent;
+            padding: 0;
+        }
+        
+        .recipe-name-editable.editing::after {
+            display: none;
+        }
+        
+        .recipe-name-input {
+            width: 100%;
+            padding: 4px 8px;
+            border: 2px solid var(--accent-color);
+            border-radius: var(--radius-sm);
+            font-size: inherit;
+            font-weight: 600;
+            font-family: inherit;
+            background: var(--card-bg);
+            color: var(--primary-color);
+            outline: none;
+            min-width: 150px;
+        }
+        
+        .recipe-name-input:focus {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .recipe-card-name {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            display: inline-block;
+            position: relative;
+        }
+        
+        .recipe-card-name:hover {
+            background: var(--bg-color);
+        }
+        
+        .recipe-card-name:hover::after {
+            content: '双击编辑';
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            animation: fadeInTooltip 0.2s ease-out 0.3s forwards;
+            pointer-events: none;
+        }
+        
+        .recipe-card-name.editing {
+            background: transparent;
+            padding: 0;
+        }
+        
+        .recipe-card-name.editing::after {
+            display: none;
+        }
+        
+        @keyframes fadeInTooltip {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .unsafe-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-xs);
+            font-weight: 600;
+            margin-left: var(--spacing-xs);
+        }
+        
+        /* 消息动画 */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+        
+        .action-btn {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--text-xs);
+            font-weight: 600;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .action-btn-edit {
+            background: var(--info-bg);
+            color: var(--info-text);
+        }
+        
+        .action-btn-edit:hover {
+            background: var(--info-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .action-btn-delete {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        
+        .action-btn-delete:hover {
+            background: var(--error-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-3xl);
+            color: var(--secondary-color);
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+        
+        .empty-state-text {
+            font-size: var(--text-lg);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .empty-state-hint {
+            font-size: var(--text-sm);
+            color: var(--secondary-color);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .recipe-db-container {
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+            
+            .inventory-header,
+            .recipe-list-header {
+                flex-direction: column;
+            }
+            
+            .recipe-list-actions {
+                width: 100%;
+            }
+            
+            .recipe-list-actions .btn {
+                flex: 1;
+            }
+            
+            .form-grid,
+            .inventory-form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-filter-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .recipe-db-container {
+                padding: var(--spacing-md);
+            }
+            
+            .db-header,
+            .inventory-section,
+            .recipe-editor,
+            .recipe-list {
+                padding: var(--spacing-lg);
+            }
+            
+            .recipe-table-wrapper {
+                overflow-x: scroll;
+            }
+            
+            .recipe-table {
+                min-width: 800px;
+            }
+            
+            .recipe-cards-view {
+                grid-template-columns: 1fr;
+            }
+            
+            .recipe-list-actions {
+                flex-direction: column;
+            }
+            
+            .recipe-list-actions > * {
+                width: 100%;
+            }
+            
+            .view-toggle {
+                width: 100%;
+                justify-content: stretch;
+            }
+            
+            .view-toggle-btn {
+                flex: 1;
+            }
+            
+            .db-toolbar {
+                flex-direction: column;
+            }
+            
+            .db-toolbar .btn {
+                width: 100%;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+        
+        @media print {
+            .db-toolbar,
+            .recipe-editor {
+                display: none;
+            }
+            
+            .recipe-table {
+                font-size: var(--text-xs);
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html" aria-current="page">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: 8px 15px; color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <main id="main-content" class="recipe-db-container" style="margin-top: 80px;">
+        <div class="db-header">
+            <h1>您的私人配方库</h1>
+            <p class="subtitle">离线·本地存储 · 数据保存在浏览器 localStorage 中 · 可导入/导出 JSON</p>
+        </div>
+
+        <!-- Inventory Management -->
+        <div class="inventory-section">
+            <div class="inventory-header">
+                <div>
+                    <h2>库存管理</h2>
+                    <p class="inventory-description">单击常用项目切换选择（未选中则添加，已选中则删除）；下拉菜单或输入添加其他项目</p>
+                </div>
+            </div>
+            
+            <div class="inventory-cards-grid">
+                <!-- 精油库存卡片 -->
+                <div class="inventory-card">
+                    <div class="inventory-card-header">
+                        <h3>精油</h3>
+                    </div>
+                    <div class="popular-items-compact">
+                        <div class="popular-items-label">常用（单击切换选择）</div>
+                        <div id="popular-oils" class="popular-items-grid"></div>
+                    </div>
+                    <div class="custom-add-compact">
+                        <select id="oil-select" class="oil-select-compact">
+                            <option value="">-- 选择其他精油 --</option>
+                        </select>
+                        <div class="custom-input-group-compact">
+                            <input type="text" id="new-oil" placeholder="或输入名称" class="custom-input-compact">
+                            <button class="btn btn-primary btn-small" onclick="addInventoryItem('oils')">添加</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 基础油库存卡片 -->
+                <div class="inventory-card">
+                    <div class="inventory-card-header">
+                        <h3>基础油</h3>
+                    </div>
+                    <div class="popular-items-compact">
+                        <div class="popular-items-label">常用（单击切换选择）</div>
+                        <div id="popular-carriers" class="popular-items-grid"></div>
+                    </div>
+                    <div class="custom-add-compact">
+                        <select id="carrier-select" class="oil-select-compact">
+                            <option value="">-- 选择其他基础油 --</option>
+                        </select>
+                        <div class="custom-input-group-compact">
+                            <input type="text" id="new-carrier" placeholder="或输入名称" class="custom-input-compact">
+                            <button class="btn btn-primary btn-small" onclick="addInventoryItem('carriers')">添加</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 溶剂库存卡片 -->
+                <div class="inventory-card">
+                    <div class="inventory-card-header">
+                        <h3>溶剂</h3>
+                    </div>
+                    <div class="custom-add-compact">
+                        <div class="custom-input-group-compact">
+                            <input type="text" id="new-solvent" placeholder="输入溶剂名称" class="custom-input-compact">
+                            <button class="btn btn-primary btn-small" onclick="addInventoryItem('solvents')">添加</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 库存表格 -->
+            <div class="inventory-table-section">
+                <h3>当前库存</h3>
+                <div class="inventory-table-wrapper">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>类别</th>
+                                <th>项目名称</th>
+                                <th>分类标签</th>
+                                <th>主要作用</th>
+                                <th>保质期</th>
+                                <th>生产日期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- 由JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recipe Editor -->
+        <div class="recipe-editor" id="recipe-editor" style="display: none;">
+            <div class="recipe-editor-header">
+                <h2>📝 配方编辑器</h2>
+                <p class="recipe-editor-subtitle">创建或编辑您的私人配方，系统会自动评估安全浓度</p>
+            </div>
+            <div class="recipe-editor-body">
+                <form id="recipe-form" onsubmit="saveRecipe(event)">
+                    <!-- 基本信息 -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <div class="form-section-icon">1</div>
+                            <div>
+                                <h3 class="form-section-title">基本信息</h3>
+                                <p class="form-section-description">填写配方的名称和用途标签</p>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>配方名称 <span class="required">*</span></label>
+                                <input type="text" id="recipe-name" required placeholder="例如：助眠放松滚珠">
+                                <div class="input-hint">为您的配方起一个容易识别的名称</div>
+                            </div>
+                            <div class="form-group">
+                                <label>用途 / 标签</label>
+                                <input type="text" id="recipe-purpose" placeholder="例如：助眠；放松；缓解焦虑">
+                                <div class="input-hint">用分号分隔多个标签，便于搜索和分类</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 配方参数 -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <div class="form-section-icon">2</div>
+                            <div>
+                                <h3 class="form-section-title">配方参数</h3>
+                                <p class="form-section-description">设置配方的总量和稀释浓度</p>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>总量（mL）</label>
+                                <input type="number" id="recipe-total" min="0" step="0.1" placeholder="例如：10">
+                                <div class="input-hint">配方的总容量，单位：毫升</div>
+                            </div>
+                            <div class="form-group">
+                                <label>稀释浓度（%）</label>
+                                <input type="number" id="recipe-dilution" min="0" max="100" step="0.1" placeholder="例如：2">
+                                <div class="input-hint">精油在配方中的百分比浓度</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 精油成分 -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <div class="form-section-icon">3</div>
+                            <div>
+                                <h3 class="form-section-title">精油成分</h3>
+                                <p class="form-section-description">添加配方中使用的精油及其用量</p>
+                            </div>
+                        </div>
+                        <div class="oil-rows-container">
+                            <div id="oil-rows" class="oil-rows-list"></div>
+                            <button type="button" class="add-oil-btn" onclick="addOilRow()">
+                                <span>＋</span>
+                                <span>添加精油</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 介质和基底 -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <div class="form-section-icon">4</div>
+                            <div>
+                                <h3 class="form-section-title">介质和基底</h3>
+                                <p class="form-section-description">选择配方的介质类型、基础油或溶剂</p>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>介质类型</label>
+                                <select id="recipe-medium-type">
+                                    <option value="">（自动推断）</option>
+                                    <option value="base-oil">基础油（按摩油、滚珠等）</option>
+                                    <option value="handcream">护手霜</option>
+                                    <option value="bodylotion">身体乳</option>
+                                    <option value="rosewater">玫瑰水/纯露</option>
+                                    <option value="alcohol">95%乙醇（香水、喷雾等）</option>
+                                    <option value="footbath">泡脚/泡澡</option>
+                                    <option value="spray">喷雾</option>
+                                    <option value="diffuser">扩香</option>
+                                </select>
+                                <div class="input-hint">选择配方的主要介质类型，用于安全评估</div>
+                            </div>
+                            <div class="form-group">
+                                <label>基础油</label>
+                                <select id="recipe-carrier">
+                                    <option value="">（不选）</option>
+                                </select>
+                                <div class="input-hint">选择使用的基础油（如荷荷巴油、甜杏仁油等）</div>
+                            </div>
+                            <div class="form-group">
+                                <label>溶剂</label>
+                                <select id="recipe-solvent">
+                                    <option value="">（不选）</option>
+                                </select>
+                                <div class="input-hint">选择使用的溶剂（如乙醇、纯露等）</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 备注 -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <div class="form-section-icon">5</div>
+                            <div>
+                                <h3 class="form-section-title">备注与注意事项</h3>
+                                <p class="form-section-description">记录配方的特殊说明和安全提示</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>备注 / 注意事项</label>
+                            <textarea id="recipe-notes" rows="4" placeholder="例如：孕期/哺乳期/儿童谨慎；避光（佛手柑）；建议睡前使用等"></textarea>
+                            <div class="input-hint">记录配方的使用说明、禁忌人群、保存方法等重要信息</div>
+                        </div>
+                    </div>
+
+                    <!-- 安全评估 -->
+                    <div class="form-section">
+                        <div class="safety-panel">
+                            <div class="safety-panel-header">
+                                <div style="flex: 1;">
+                                    <div class="safety-panel-label">安全浓度评估</div>
+                                    <div id="safety-panel-content" class="safety-panel-content">（请输入总量、稀释度与各成分滴数后自动评估）</div>
+                                </div>
+                                <div id="safety-status" class="safety-badge safety-yellow">未评估</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="form-actions">
+                        <input type="hidden" id="editing-id">
+                        <button type="button" class="btn btn-secondary" onclick="resetEditor()">清空</button>
+                        <button type="submit" class="btn btn-primary">保存配方</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recipe List -->
+        <div class="recipe-list">
+            <div class="recipe-list-header">
+                <div>
+                    <h2>配方列表</h2>
+                    <p class="recipe-list-subtitle">管理您的所有配方，支持搜索、筛选和批量操作</p>
+                    <div class="recipe-count" id="recipe-count">共 <strong>0</strong> 个配方</div>
+                </div>
+                <div class="recipe-list-actions">
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="view-table" onclick="switchView('table')" title="表格视图">
+                            <span>☰</span>
+                            <span>表格</span>
+                        </button>
+                        <button class="view-toggle-btn" id="view-cards" onclick="switchView('cards')" title="卡片视图">
+                            <span>⊞</span>
+                            <span>卡片</span>
+                        </button>
+                    </div>
+                    <button class="btn btn-primary" onclick="showNewRecipeForm()">＋ 新建配方</button>
+                    <button class="btn btn-secondary" onclick="window.print()">打印/保存PDF</button>
+                    <button class="btn btn-secondary" onclick="exportDatabase()">导出 JSON</button>
+                    <label class="btn btn-secondary" style="cursor: pointer;">
+                        <input type="file" id="importFile" accept="application/json" style="display: none;" onchange="importDatabase(event)">
+                        导入 JSON
+                    </label>
+                    <button class="btn btn-danger" onclick="clearDatabase()" title="清空数据库">清空</button>
+                </div>
+            </div>
+            <div class="search-filter-container">
+                <input type="text" id="search-query" class="search-input" placeholder="按名称/用途/备注搜索…" oninput="renderRecipeTable()" aria-label="搜索配方">
+            </div>
+            <div class="filter-container">
+                <label for="filter-oil">包含精油：</label>
+                <select id="filter-oil" onchange="renderRecipeTable()">
+                    <option value="">— 任意 —</option>
+                </select>
+            </div>
+            <div class="recipe-table-wrapper" id="recipe-table-wrapper">
+                <table class="recipe-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>成分</th>
+                            <th>浓度</th>
+                            <th>容量</th>
+                            <th>基础油/溶剂</th>
+                            <th>用途/备注</th>
+                            <th>安全</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recipe-table-body"></tbody>
+                </table>
+            </div>
+            <div class="recipe-cards-view" id="recipe-cards-view"></div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="oil-database.js"></script>
+    <script src="recipe-db.js"></script>
+    <script src="unified-data-manager.js"></script>
+    <script src="safety-evaluator.js"></script>
+    <script src="preset-recipes.js"></script>
+    <script src="recipe-database.js"></script>
+</body>
+</html>
+
+
+

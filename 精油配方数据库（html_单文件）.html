@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>精油配方数据库（本地版）</title>
+  <style>
+    :root{
+      --bg:#f7f7fb;--card:#ffffff;--ink:#1f2937;--muted:#6b7280;--brand:#2563eb;--line:#e5e7eb;--good:#059669;--warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--ink)}
+    header{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--line)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1{font-size:22px;margin:0}
+    .grid{display:grid;gap:12px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(0,0,0,.03)}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type=text], input[type=number], select, textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+    textarea{min-height:80px}
+    button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
+    button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    button.ghost{background:transparent}
+    button.good{background:var(--good);border-color:var(--good);color:#fff}
+    button.warn{background:var(--warn);border-color:var(--warn);color:#fff}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:999px;font-size:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    th{font-size:12px;color:var(--muted);font-weight:600}
+    tr:hover{background:#fafafa}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+    .right{display:flex;justify-content:flex-end;gap:8px}
+    .row{display:flex;gap:8px;align-items:center}
+    .row > *{flex:1}
+    .inline{display:inline-flex;gap:8px;align-items:center}
+    .muted{color:var(--muted)}
+    .sr{position:absolute;left:-10000px}
+    @media (max-width: 840px){.grid.cols-3{grid-template-columns:1fr}.grid.cols-2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1>精油配方数据库（离线·本地存储）</h1>
+        <div class="muted" style="font-size:12px">不依赖网络与服务器 · 数据保存在浏览器 localStorage 中 · 可导入/导出 JSON</div>
+      </div>
+      <div class="toolbar">
+        <button id="btn-new" class="primary">＋ 新建配方</button>
+        <button id="btn-export" title="导出为 JSON">导出</button>
+        <label class="inline" for="file-import" style="gap:4px"><input id="file-import" type="file" accept="application/json" style="display:none"/> <button id="btn-import">导入</button></label>
+        <button id="btn-print">打印/保存PDF</button>
+        <button id="btn-clear" class="warn" title="清空数据库">清空</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="wrap card" style="margin-top:12px">
+    <h2 style="margin-top:0">工具箱 · 稀释与滴数计算</h2>
+    <div class="grid cols-3">
+      <div>
+        <label>总量（mL）</label>
+        <input id="calc-total" type="number" min="0" step="0.1" placeholder="例如：10" oninput="calcUpdate()"/>
+      </div>
+      <div>
+        <label>目标稀释浓度（%）</label>
+        <input id="calc-dilution" type="number" min="0" max="100" step="0.1" placeholder="例如：2" oninput="calcUpdate()"/>
+      </div>
+      <div>
+        <label>每 mL 滴数（默认 20）</label>
+        <input id="calc-dpm" type="number" min="1" step="1" value="20" oninput="calcUpdate()"/>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="card" style="flex:1">
+        <div class="muted" style="font-size:12px">结果</div>
+        <div id="calc-result" style="font-weight:600">—</div>
+        <div class="muted" id="calc-warn" style="margin-top:6px"></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="muted" style="font-size:12px">参考稀释范围</div>
+        <ul style="margin:6px 0 0 18px">
+          <li>面部/敏感：0.5%–1%</li>
+          <li>全身日常：1%–2%</li>
+          <li>短期局部：3%–5%</li>
+          <li>香水/点涂：5%–10%（注意个别油的上限）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <main class="wrap grid cols-3" style="margin-top:12px">
+    <!-- 左：库存与筛选 -->
+    <section class="card">
+      <h2 style="margin-top:0">库存（可选项）</h2>
+      <p class="muted" style="margin-top:4px">以下列表用于下拉选项来源，可在“设置”中增删；不代表实际库存数量。</p>
+      <div class="grid cols-2" id="inventory">
+        <div>
+          <label>精油列表（Essentials）</label>
+          <div class="chips" id="oil-list"></div>
+        </div>
+        <div>
+          <label>基础油（Base Oils）</label>
+          <div class="chips" id="carrier-list"></div>
+        </div>
+        <div>
+          <label>溶剂（Solvents）</label>
+          <div class="chips" id="solvent-list"></div>
+        </div>
+      </div>
+      <details style="margin-top:10px">
+        <summary>＋ 设置（增删可选项）</summary>
+        <div class="grid cols-2" style="margin-top:12px">
+          <div>
+            <label for="new-oil">新增精油</label>
+            <div class="row"><input id="new-oil" type="text" placeholder="例如：薰衣草真薰衣草"/><button onclick="addItem('oils')">添加</button></div>
+          </div>
+          <div>
+            <label for="new-carrier">新增基础油</label>
+            <div class="row"><input id="new-carrier" type="text" placeholder="例如：甜杏仁油"/><button onclick="addItem('carriers')">添加</button></div>
+          </div>
+          <div>
+            <label for="new-solvent">新增溶剂</label>
+            <div class="row"><input id="new-solvent" type="text" placeholder="例如：乙醇（95%）"/><button onclick="addItem('solvents')">添加</button></div>
+          </div>
+        </div>
+      </details>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)" />
+      <h3 style="margin:0 0 8px">筛选</h3>
+      <div class="grid cols-2">
+        <div>
+          <label for="q">关键词</label>
+          <input id="q" type="text" placeholder="按名称/用途/备注搜索…" oninput="renderTable()" />
+        </div>
+        <div>
+          <label for="filter-oil">包含精油</label>
+          <select id="filter-oil" onchange="renderTable()"><option value="">— 任意 —</option></select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 中：新建/编辑表单 -->
+    <section class="card" id="editor">
+      <h2 style="margin-top:0">配方编辑器</h2>
+      <form id="form-recipe" onsubmit="saveRecipe(event)">
+        <div class="grid cols-2">
+          <div>
+            <label for="name">配方名称 *</label>
+            <input id="name" required type="text" placeholder="例如：助眠放松滚珠" />
+          </div>
+          <div>
+            <label for="purpose">用途 / 标签</label>
+            <input id="purpose" type="text" placeholder="例如：助眠；放松；缓解焦虑" />
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:8px">
+          <div>
+            <label for="total">总量（mL）</label>
+            <input id="total" type="number" min="0" step="0.1" placeholder="例如：10" />
+          </div>
+          <div>
+            <label for="dilution">稀释浓度（%）</label>
+            <input id="dilution" type="number" min="0" max="100" step="0.1" placeholder="例如：2" />
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <label>精油成分（可添加多行）</label>
+          <div id="oil-rows"></div>
+          <button type="button" onclick="addOilRow()" style="margin-top:8px">＋ 添加精油</button>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:14px">
+          <div>
+            <label for="carrier">基础油</label>
+            <select id="carrier"></select>
+          </div>
+          <div>
+            <label for="solvent">溶剂</label>
+            <select id="solvent"></select>
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:8px">
+          <div>
+            <label for="method">使用方式 / 容器</label>
+            <input id="method" type="text" placeholder="例如：10mL 滚珠瓶；扩香；喷雾" />
+          </div>
+          <div>
+            <label for="author">配方来源/作者</label>
+            <input id="author" type="text" placeholder="例如：Jj He" />
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <label for="notes">备注 / 注意事项（仅作记录，不构成医疗建议）</label>
+          <textarea id="notes" placeholder="例如：孕期/哺乳期/儿童谨慎；避光（佛手柑）等"></textarea>
+        </div>
+
+        <div class="grid cols-3" style="margin-top:8px">
+          <div>
+            <label for="storageLife">建议保质期（个月）</label>
+            <input id="storageLife" type="number" min="0" step="1" placeholder="例如：12" />
+          </div>
+          <div>
+            <label for="storageTips">存储方式</label>
+            <input id="storageTips" type="text" placeholder="例如：琥珀玻璃/避光/阴凉/尽量满瓶" />
+          </div>
+          <div>
+            <label for="contra">使用禁忌（人群/情境）</label>
+            <input id="contra" type="text" placeholder="例如：孕期禁用甜茴香；冷压佛手柑避光" />
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px;background:#f9fafb">
+          <div class="row" style="align-items:flex-start">
+            <div style="flex:1">
+              <div class="muted" style="font-size:12px">安全浓度评估</div>
+              <div id="safety-panel">（请输入总量、稀释度与各成分滴数后自动评估）</div>
+            </div>
+            <div style="width:180px;text-align:right">
+              <div id="safety-status" class="chip" style="display:inline-block">未评估</div>
+            </div>
+          </div>
+        </div>
+        <div class="right" style="margin-top:14px;gap:8px">
+          <input type="hidden" id="editingId" />
+          <button type="reset" class="ghost" onclick="resetEditor()">清空</button>
+          <button type="submit" class="good">保存配方</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 右：数据表 -->
+    <section class="card">
+      <h2 style="margin-top:0">配方列表</h2>
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th style="width:22%">名称</th>
+            <th>成分</th>
+            <th style="width:10%">浓度</th>
+            <th style="width:12%">基础油/溶剂</th>
+            <th style="width:18%">用途/备注</th>
+            <th style="width:12%">保质期/月 & 安全</th>
+            <th style="width:16%">操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="wrap" style="padding-bottom:32px">
+    <div class="card">
+      <strong>温馨提醒：</strong>
+      <ul>
+        <li>本页面为<strong>个人整理/学习用途</strong>，不构成医疗建议；若有健康问题，请咨询专业医生。</li>
+        <li>部分精油（如佛手柑、肉桂、迷迭香、甜茴香、艾草等）存在<strong>光敏/皮肤刺激/禁忌</strong>风险；请务必了解并遵循相关安全指南。</li>
+        <li>请在小面积皮肤<strong>斑贴测试</strong>后再大面积使用；避免误食与接触眼睛。</li>
+      </ul>
+    </div>
+  </footer>
+
+  <section class="wrap card" style="margin:0 0 24px">
+    <h2 style="margin-top:0">安全与存储速查（根据公开资料整理）</h2>
+    <div class="grid cols-3">
+      <div>
+        <label>常见皮肤使用上限（整配方占比 %）</label>
+        <table>
+          <tbody id="limits-table"></tbody>
+        </table>
+      </div>
+      <div>
+        <label>基质性质与建议</label>
+        <ul>
+          <li><strong>葡萄籽油：</strong>质地轻、吸收快，易氧化，建议6–12个月内用完，避光冷处保存，必要时冷藏并加维E抗氧化。</li>
+          <li><strong>荷荷巴油：</strong>液体蜡，极稳定，常温避光可达2–5年；适合面部与易敏肤质。</li>
+          <li><strong>玫瑰纯露：</strong>低酸度者更耐存；开启后优先冷藏、尽量2–12个月内用完，避免手指直接接触。</li>
+          <li><strong>双脱醛乙醇（约95%）：</strong>可作溶剂或制雾/香氛基底，注意易燃，严禁口服，使用琥珀玻璃密封，远离热源。</li>
+        </ul>
+      </div>
+      <div>
+        <label>通用存储与标签</label>
+        <ul>
+          <li>使用深色玻璃（琥珀/钴蓝），避光、避热、干燥处存放；尽量满瓶减少空气接触。</li>
+          <li>标签写明：名称、批次/日期、配方与浓度、基质、用途、有效期。</li>
+          <li>开启后注意嗅觉/颜色变化；有异味或浑浊请弃用。</li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:0.5rem">注：个别油存在特殊禁忌（孕期/哺乳/儿童/癫痫/光毒/皮肤致敏等）。请先做斑贴测试并遵医嘱。本页仅作学习记录，不构成医疗建议。</p>
+  </section>
+
+  <template id="tpl-oil-row">
+    <div class="row" style="margin-top:8px">
+      <select class="oil-name" required></select>
+      <input class="oil-amt" type="number" min="0" step="0.1" placeholder="份量（滴 / % / g）" />
+      <input class="oil-note" type="text" placeholder="备注（可填：滴数/比例）" />
+      <button type="button" onclick="this.parentElement.remove()">删除</button>
+    </div>
+  </template>
+
+  <script>
+    // === 初始可选项（根据你的清单预置） ===
+    const DEFAULTS = {
+      oils: [
+        "野地薰衣草","中国肉桂","艾草","依兰依兰","佛手柑","丝柏","雪松","乳香","甜茴香","迷迭香","广藿香","姜","玫瑰","檀香","天竺葵","甜橙","欧薄荷"
+      ],
+      carriers: ["葡萄籽油","荷荷巴油"],
+      solvents: ["玫瑰纯露","双脱醛乙醇"]
+    };
+
+    // === 本地存储键 ===
+    const DB_KEY = "eo_recipes_v1";
+    const LIST_KEY = "eo_lists_v1";
+
+    // === 状态 ===
+    let recipes = loadJSON(DB_KEY, []);
+    let lists = Object.assign({}, DEFAULTS, loadJSON(LIST_KEY, {}));
+
+    // === 工具函数 ===
+    function loadJSON(k, fallback){
+      try{ const v = localStorage.getItem(k); return v? JSON.parse(v): fallback }catch(e){ return fallback }
+    }
+    function saveJSON(k, v){ localStorage.setItem(k, JSON.stringify(v)) }
+    function $(id){ return document.getElementById(id) }
+
+    // === 渲染库存 chips ===
+    function renderInventory(){
+      const oilWrap = $("oil-list"); oilWrap.innerHTML = "";
+      const carrierWrap = $("carrier-list"); carrierWrap.innerHTML = "";
+      const solventWrap = $("solvent-list"); solventWrap.innerHTML = "";
+      lists.oils.forEach((x,i)=> oilWrap.appendChild(makeChip(x, ()=>{ lists.oils.splice(i,1); persistLists(); renderAll() })));
+      lists.carriers.forEach((x,i)=> carrierWrap.appendChild(makeChip(x, ()=>{ lists.carriers.splice(i,1); persistLists(); renderAll() })));
+      lists.solvents.forEach((x,i)=> solventWrap.appendChild(makeChip(x, ()=>{ lists.solvents.splice(i,1); persistLists(); renderAll() })));
+    }
+    function makeChip(text, onRemove){
+      const span = document.createElement('span');
+      span.className = 'chip';
+      span.textContent = text;
+      span.title = '点击删除此项';
+      span.style.cursor='pointer';
+      span.onclick = onRemove;
+      return span;
+    }
+    function persistLists(){ saveJSON(LIST_KEY, lists) }
+
+    // === 下拉选项填充 ===
+    function fillSelectOptions(){
+      const filterSel = $("filter-oil");
+      const carrierSel = $("carrier");
+      const solventSel = $("solvent");
+      [filterSel, carrierSel, solventSel].forEach(sel=> sel.innerHTML = "");
+
+      // filter
+      const anyOpt = document.createElement('option'); anyOpt.value=""; anyOpt.textContent='— 任意 —'; filterSel.appendChild(anyOpt);
+      lists.oils.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; filterSel.appendChild(op) });
+
+      // carrier
+      const none1=document.createElement('option'); none1.value=""; none1.textContent='（不选）'; carrierSel.appendChild(none1);
+      lists.carriers.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; carrierSel.appendChild(op) });
+
+      // solvent
+      const none2=document.createElement('option'); none2.value=""; none2.textContent='（不选）'; solventSel.appendChild(none2);
+      lists.solvents.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; solventSel.appendChild(op) });
+
+      // 现有油行的下拉
+      document.querySelectorAll('.oil-name').forEach(sel=>{
+        sel.innerHTML = '';
+        lists.oils.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; sel.appendChild(op) });
+      })
+    }
+
+    // === 表单：精油行 ===
+    function addOilRow(preset){
+      const tpl = document.getElementById('tpl-oil-row');
+      const node = tpl.content.cloneNode(true);
+      const row = node.querySelector('.row');
+      const sel = node.querySelector('.oil-name');
+      const amt = node.querySelector('.oil-amt');
+      const note = node.querySelector('.oil-note');
+      lists.oils.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; sel.appendChild(op) });
+      if(preset){ sel.value=preset.name||''; amt.value=preset.amount||''; note.value=preset.note||''; }
+      [sel, amt, note].forEach(el=> el.addEventListener('input', refreshSafety));
+      document.getElementById('oil-rows').appendChild(node);
+      refreshSafety();
+    }
+
+    // === 保存配方 ===
+    function saveRecipe(e){
+      e.preventDefault();
+      const id = $("editingId").value || crypto.randomUUID();
+      const safety = evaluateSafety();
+      if(safety.level==='red' && !confirm('检测到超出安全上限：\n'+safety.message+'\n仍要保存吗？')) return;
+      const payload = {
+        id,
+        name: $("name").value.trim(),
+        purpose: $("purpose").value.trim(),
+        total: num($("total").value),
+        dilution: num($("dilution").value),
+        carrier: $("carrier").value,
+        solvent: $("solvent").value,
+        method: $("method").value.trim(),
+        author: $("author").value.trim(),
+        notes: $("notes").value.trim(),
+        storageLife: num($("storageLife").value),
+        storageTips: $("storageTips").value.trim(),
+        contraindications: $("contra").value.trim(),
+        safetyFlag: safety.level,
+        oils: Array.from(document.querySelectorAll('#oil-rows .row')).map(row=>({
+          name: row.querySelector('.oil-name').value,
+          amount: num(row.querySelector('.oil-amt').value),
+          note: row.querySelector('.oil-note').value.trim()
+        })),
+        updatedAt: new Date().toISOString()
+      };
+      if(!payload.name){ alert('请填写配方名称'); return }
+      if(payload.oils.length===0){ if(!confirm('未添加任何精油，确定要保存吗？')) return }
+      const idx = recipes.findIndex(x=>x.id===id);
+      if(idx>=0) recipes[idx]=payload; else recipes.unshift(payload);
+      saveJSON(DB_KEY, recipes);
+      renderTable();
+      resetEditor();
+    }
+
+    function num(v){ const n = Number(v); return isFinite(n)? n: '' }
+
+    // === 重置编辑器 ===
+    function resetEditor(){
+      $("form-recipe").reset();
+      $("editingId").value = '';
+      $("oil-rows").innerHTML = '';
+      addOilRow();
+      refreshSafety();
+    }
+
+    // === 渲染表格 ===
+    function renderTable(){
+      const tbody = document.querySelector('#tbl tbody');
+      tbody.innerHTML = '';
+      const q = $("q").value.trim().toLowerCase();
+      const filterOil = $("filter-oil").value;
+      const rows = recipes.filter(r=>{
+        const hay = (r.name+"\n"+r.purpose+"\n"+r.notes+"\n"+r.oils.map(o=>o.name+o.note).join('\n')).toLowerCase();
+        const hitQ = !q || hay.includes(q);
+        const hitOil = !filterOil || (r.oils||[]).some(o=>o.name===filterOil);
+        return hitQ && hitOil;
+      });
+      rows.forEach(r=>{
+        const tr = document.createElement('tr');
+        const oilStr = (r.oils||[]).map(o=>`${o.name}${o.amount!==''?`(${o.amount})`:''}${o.note?`·${o.note}`:''}`).join('， ');
+        const safe = (r.safetyFlag||'').toUpperCase();
+        tr.innerHTML = `
+          <td><strong>${esc(r.name)}</strong><div class="muted mono">${new Date(r.updatedAt||Date.now()).toLocaleString()}</div></td>
+          <td>${esc(oilStr||'—')}</td>
+          <td>${r.dilution!==''? esc(r.dilution+'%'):'—'}</td>
+          <td>${esc([r.carrier,r.solvent].filter(Boolean).join(' / ')||'—')}</td>
+          <td><div>${esc(r.purpose||'')}</div><div class="muted">${esc(r.notes||'')}</div></td>
+          <td><div>${r.storageLife? esc(r.storageLife+' 个月'):'—'}</div><div class="muted">${esc(safe)}</div></td>
+          <td>
+            <div class="toolbar">
+              <button onclick="editRecipe('${r.id}')">编辑</button>
+              <button onclick="duplicateRecipe('${r.id}')">复制</button>
+              <button class="warn" onclick="removeRecipe('${r.id}')">删除</button>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      if(rows.length===0){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="7" class="muted">暂无配方，点击上方"新建配方"开始记录。</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function esc(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
+
+    // === 操作 ===
+    function editRecipe(id){
+      const r = recipes.find(x=>x.id===id); if(!r) return;
+      $("editingId").value = r.id;
+      $("name").value = r.name||'';
+      $("purpose").value = r.purpose||'';
+      $("total").value = r.total!==''? r.total:'';
+      $("dilution").value = r.dilution!==''? r.dilution:'';
+      $("carrier").value = r.carrier||'';
+      $("solvent").value = r.solvent||'';
+      $("method").value = r.method||'';
+      $("author").value = r.author||'';
+      $("notes").value = r.notes||'';
+      $("oil-rows").innerHTML = '';
+      (r.oils||[]).forEach(o=> addOilRow(o));
+      if((r.oils||[]).length===0) addOilRow();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function duplicateRecipe(id){
+      const r = recipes.find(x=>x.id===id); if(!r) return;
+      const copy = JSON.parse(JSON.stringify(r));
+      copy.id = crypto.randomUUID();
+      copy.name = r.name + '（副本）';
+      copy.updatedAt = new Date().toISOString();
+      recipes.unshift(copy); saveJSON(DB_KEY, recipes); renderTable();
+    }
+
+    function removeRecipe(id){
+      if(!confirm('确定删除该配方吗？此操作不可撤销。')) return;
+      recipes = recipes.filter(x=>x.id!==id); saveJSON(DB_KEY, recipes); renderTable();
+    }
+
+    function addItem(kind){
+      const map = {oils:'new-oil', carriers:'new-carrier', solvents:'new-solvent'};
+      const input = $(map[kind]);
+      const val = (input.value||'').trim(); if(!val) return;
+      lists[kind] = lists[kind] || [];
+      if(!lists[kind].includes(val)) lists[kind].push(val);
+      input.value='';
+      persistLists();
+      renderAll();
+
+    // 绑定输入变更以刷新安全评估
+    ["total","dilution"].forEach(id=> $(id).addEventListener('input', refreshSafety));
+
+    function evaluateSafety(){
+      const total = Number($("total").value||0);
+      const dilution = Number($("dilution").value||0);
+      const rows = Array.from(document.querySelectorAll('#oil-rows .row'));
+      const amounts = rows.map(r=> Number(r.querySelector('.oil-amt').value||1) );
+      const names = rows.map(r=> r.querySelector('.oil-name').value );
+      const sum = amounts.reduce((a,b)=>a+b,0) || 1;
+      if(!dilution || rows.length===0){ return {level:'', message:''}; }
+      let problems=[]; let warnings=[];
+      names.forEach((name,i)=>{
+        const share = amounts[i]/sum;
+        const oilPct = dilution * share;
+        const cap = OIL_CAPS[name];
+        if(cap===0 && oilPct>0){ problems.push(`${name}: 配方不建议皮肤应用（当前≈${oilPct.toFixed(2)}%）`); }
+        else if(typeof cap==='number'){
+          if(oilPct > cap){ problems.push(`${name}: 超上限 ${cap}%（当前≈${oilPct.toFixed(2)}%）`); }
+          else if(oilPct > cap*0.8){ warnings.push(`${name}: 接近上限 ${cap}%（当前≈${oilPct.toFixed(2)}%）`); }
+        } else {
+          if(oilPct > 2){ warnings.push(`${name}: 超过保守参考 2%（当前≈${oilPct.toFixed(2)}%）`); }
+        }
+      });
+      const level = problems.length? 'red' : (warnings.length? 'yellow' : 'green');
+      const message = (problems.concat(warnings)).join('\n');
+      return {level, message};
+    }
+
+    function refreshSafety(){
+      const s = evaluateSafety();
+      const panel = $("safety-panel");
+      const status = $("safety-status");
+      const color = s.level==='red'? '#dc2626' : s.level==='yellow'? '#b45309' : s.level==='green'? '#059669' : '#6b7280';
+      status.textContent = s.level? (s.level==='green'? '安全范围' : s.level==='yellow'? '接近上限' : '超出上限') : '未评估';
+      status.style.background=color; status.style.borderColor=color; status.style.color='#fff';
+      panel.textContent = s.message || '无异常；请仍遵循特定人群禁忌与斑贴测试。';
+    }
+    }
+
+    // === 导入/导出 ===
+    function exportJSON(){
+      const blob = new Blob([JSON.stringify({recipes, lists}, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'eo_database.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file){
+      const fr = new FileReader();
+      fr.onload = ()=>{
+        try{
+          const data = JSON.parse(fr.result);
+          if(data.recipes) recipes = data.recipes;
+          if(data.lists) lists = Object.assign({}, DEFAULTS, data.lists);
+          saveJSON(DB_KEY, recipes); persistLists(); renderAll();
+          alert('导入完成');
+        }catch(e){ alert('导入失败：不是有效的 JSON 文件') }
+      };
+      fr.readAsText(file);
+    }
+
+    // === 事件 ===
+    $("btn-new").onclick = ()=>{ resetEditor(); $("name").focus() };
+    $("btn-export").onclick = exportJSON;
+    $("btn-import").onclick = ()=> $("file-import").click();
+    $("file-import").addEventListener('change', (e)=>{ const f=e.target.files[0]; if(f) importJSON(f) });
+    $("btn-print").onclick = ()=> window.print();
+    $("btn-clear").onclick = ()=>{ if(confirm('清空所有配方与自定义列表？此操作不可撤销。')){ recipes=[]; lists=JSON.parse(JSON.stringify(DEFAULTS)); saveJSON(DB_KEY, recipes); persistLists(); renderAll(); } };
+
+    function renderAll(){ renderInventory(); fillSelectOptions(); renderTable(); }
+
+    // === 首次渲染 ===
+    resetEditor();
+    renderAll();
+      
+    // === 预置安全上限（% 占整配方），用于速查 ===
+    const LIMITS = [
+      {name:'佛手柑（冷压，非FCF）', max:0.4, note:'光毒；FCF（去呋喃香豆素）版本不光毒'},
+      {name:'依兰依兰', max:0.8, note:'易致敏'},
+      {name:'甜茴香', max:2.5, note:'含茴香脑；孕期/哺乳/雌激素相关疾病慎用/禁用'},
+      {name:'欧薄荷', max:5.4, note:'避免接触婴幼儿鼻口；G6PD缺乏/心律失常慎用'},
+      {name:'中国肉桂（桂皮/桂皮叶以外之桂皮类，近似桂皮皮）', max:0.1, note:'强刺激；建议≤0.05–0.1% 局部点涂'},
+      {name:'迷迭香', max:3, note:'含樟脑/1,8-桉叶素；癫痫史慎用，避免婴幼儿面部'},
+      {name:'佛手柑（FCF）', max:15, note:'无光毒限制，仍需常规稀释'}
+    ];
+
+    // —— 扩展：用于编辑器的保守上限表（单位：% 占整配方） ——
+    const OIL_CAPS = {
+      '野地薰衣草': 5,
+      '中国肉桂': 0.1,
+      '艾草': 2,  // 孕期禁用，但可安全用于皮肤（低浓度）
+      '依兰依兰': 0.8,
+      '佛手柑': 0.4,
+      '佛手柑（FCF）': 15,
+      '丝柏': 2,
+      '雪松': 2,
+      '乳香': 2,
+      '甜茴香': 2.5,
+      '迷迭香': 3,
+      '广藿香': 3,
+      '姜': 1,
+      '玫瑰': 1,
+      '檀香': 2,
+      '天竺葵': 2,
+      '甜橙': 2,
+      '欧薄荷': 5.4
+    };
+
+    function renderLimits(){
+      const tb = document.getElementById('limits-table');
+      if(!tb) return;
+      tb.innerHTML = '';
+      LIMITS.forEach(it=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="width:42%">${esc(it.name)}</td><td style="width:18%">${it.max}%</td><td class="muted">${esc(it.note||'')}</td>`;
+        tb.appendChild(tr);
+      })
+    }
+
+    // === 计算器 ===
+    function calcUpdate(){
+      const total = Number(document.getElementById('calc-total')?.value || 0);
+      const pct = Number(document.getElementById('calc-dilution')?.value || 0);
+      const dpm = Number(document.getElementById('calc-dpm')?.value || 20);
+      if(!total || !pct || !dpm){ document.getElementById('calc-result').textContent='—'; document.getElementById('calc-warn').textContent=''; return }
+      const eoMl = total * pct / 100;
+      const drops = Math.round(eoMl * dpm);
+      document.getElementById('calc-result').textContent = `${pct}% 的配方中：精油≈ ${eoMl.toFixed(2)} mL ≈ ${drops} 滴（按 ${dpm} 滴/mL）`;
+      document.getElementById('calc-warn').textContent = '提示：不同精油滴重不同，此为近似值；请对照下表查看特定精油的上限。';
+    }
+
+    // === 经典配方预置（仅在首次使用、数据库为空时导入） ===
+    const PRESETS = [
+      {name:'助眠放松滚珠', purpose:'睡眠·舒缓', total:10, dilution:2, carrier:'荷荷巴油', solvent:'', method:'10mL 滚珠瓶，睡前涂抹腕内/胸前', author:'库预置', notes:'含依兰依兰（≤0.8%）；孕期/低血压者先做斑贴与小剂量测试', oils:[
+        {name:'野地薰衣草', amount:12, note:'滴'},
+        {name:'依兰依兰', amount:2, note:'滴（注意上限）'},
+        {name:'雪松', amount:4, note:'滴'},
+        {name:'乳香', amount:4, note:'滴'}
+      ]},
+      {name:'舒压提振扩香', purpose:'减压·愉悦', total:'', dilution:'', carrier:'', solvent:'', method:'扩香 15–30 分钟通风环境', author:'库预置', notes:'使用非FCF佛手柑时避免日晒；FCF版本无光敏限制', oils:[
+        {name:'佛手柑', amount:6, note:'滴'},
+        {name:'天竺葵', amount:3, note:'滴'},
+        {name:'乳香', amount:3, note:'滴'}
+      ]},
+      {name:'专注清醒滚珠', purpose:'办公·学习', total:10, dilution:3, carrier:'葡萄籽油', solvent:'', method:'太阳穴/颈后少量点涂，避开眼周', author:'库预置', notes:'含欧薄荷（避免接触儿童面部）；对高浓度敏感者降至2%', oils:[
+        {name:'迷迭香', amount:10, note:'滴'},
+        {name:'欧薄荷', amount:8, note:'滴'},
+        {name:'丝柏', amount:4, note:'滴'}
+      ]},
+      {name:'舒呼吸胸背按摩油', purpose:'季节性支持', total:30, dilution:2, carrier:'葡萄籽油', solvent:'', method:'胸背部少量按摩；儿童与孕期不建议此配方', author:'库预置', notes:'含桉油醇/薄荷醇成分，对呼吸道敏感人群谨慎', oils:[
+        {name:'迷迭香', amount:12, note:'滴'},
+        {name:'欧薄荷', amount:6, note:'滴'},
+        {name:'乳香', amount:6, note:'滴'}
+      ]},
+      {name:'胃部舒缓按摩油', purpose:'消化·放松', total:20, dilution:2, carrier:'荷荷巴油', solvent:'', method:'顺时针小范围按摩腹部', author:'库预置', notes:'甜茴香≤2.5%；孕期/激素相关疾病禁用甜茴香', oils:[
+        {name:'姜', amount:8, note:'滴'},
+        {name:'甜茴香', amount:4, note:'滴'},
+        {name:'甜橙', amount:8, note:'滴'}
+      ]},
+      {name:'经期舒缓身体油', purpose:'经期不适', total:30, dilution:2, carrier:'荷荷巴油', solvent:'', method:'下腹/腰骶部轻柔按摩', author:'库预置', notes:'孕期不使用；对雌激素敏感人群避免甜茴香，可去除', oils:[
+        {name:'天竺葵', amount:12, note:'滴'},
+        {name:'野地薰衣草', amount:10, note:'滴'},
+        {name:'姜', amount:6, note:'滴'}
+      ]},
+      {name:'沉静冥想香膏（油）', purpose:'冥想·焦虑', total:15, dilution:5, carrier:'荷荷巴油', solvent:'', method:'耳后/手腕极少量点涂', author:'库预置', notes:'高浓度点涂配方；皮肤敏感者降至2–3%', oils:[
+        {name:'檀香', amount:10, note:'滴'},
+        {name:'乳香', amount:8, note:'滴'},
+        {name:'广藿香', amount:6, note:'滴'}
+      ]},
+      {name:'温暖循环身体油', purpose:'寒凉体感', total:50, dilution:2, carrier:'葡萄籽油', solvent:'', method:'四肢末端与腹部按摩', author:'库预置', notes:'含中国肉桂≤0.05–0.1%；先做斑贴；避免黏膜/受损皮肤', oils:[
+        {name:'姜', amount:16, note:'滴'},
+        {name:'甜橙', amount:12, note:'滴'},
+        {name:'中国肉桂', amount:2, note:'滴（极低比例）'}
+      ]},
+      {name:'林地木香男士调', purpose:'木质·沉稳', total:'', dilution:'', carrier:'', solvent:'', method:'扩香 / 香水基底', author:'库预置', notes:'前调佛手柑注意光敏', oils:[
+        {name:'丝柏', amount:6, note:'滴'},
+        {name:'雪松', amount:6, note:'滴'},
+        {name:'广藿香', amount:3, note:'滴'},
+        {name:'佛手柑', amount:3, note:'滴'}
+      ]},
+      {name:'花香浪漫身体油', purpose:'情绪·连结', total:30, dilution:2, carrier:'荷荷巴油', solvent:'', method:'肩颈/锁骨/手臂少量涂抹', author:'库预置', notes:'依兰依兰≤0.8%；玫瑰用量少而香气强', oils:[
+        {name:'依兰依兰', amount:4, note:'滴'},
+        {name:'玫瑰', amount:2, note:'滴'},
+        {name:'檀香', amount:4, note:'滴'},
+        {name:'甜橙', amount:6, note:'滴'}
+      ]}
+    ];
+
+    // —— 权威书籍取向的“经典配方库·首批” ——
+    const PRESETS_MORE = [
+      {name:'薰衣草·经典助眠雾', purpose:'助眠·情绪舒缓', total:50, dilution:1, carrier:'', solvent:'玫瑰纯露', method:'喷雾，睡前卧室空气喷洒/枕套远距', author:'经典取向', notes:'思路参考 Worwood/Mojay，避免直接喷面部；织物先做隐蔽测试', oils:[
+        {name:'野地薰衣草', amount:20, note:'滴'},
+        {name:'乳香', amount:8, note:'滴'},
+        {name:'甜橙', amount:12, note:'滴'}
+      ]},
+      {name:'佛手柑FCF·心情晴朗', purpose:'情绪提振·扩香', total:'', dilution:'', carrier:'', solvent:'', method:'扩香 15–30 分钟通风环境', author:'经典取向', notes:'使用 FCF 版本以避免光毒；若冷压版，仅限扩香或避光皮肤低浓度', oils:[
+        {name:'佛手柑', amount:8, note:'滴'},
+        {name:'天竺葵', amount:4, note:'滴'},
+        {name:'檀香', amount:2, note:'滴'}
+      ]},
+      {name:'迷迭香·专注清醒', purpose:'专注·学习办公', total:'', dilution:'', carrier:'', solvent:'', method:'扩香/嗅吸；或做 2% 滚珠避眼周', author:'经典取向', notes:'癫痫史慎用；避免婴幼儿面部', oils:[
+        {name:'迷迭香', amount:6, note:'滴'},
+        {name:'欧薄荷', amount:3, note:'滴'},
+        {name:'甜橙', amount:3, note:'滴'}
+      ]},
+      {name:'欧薄荷·头部放松滚珠', purpose:'头部紧张', total:10, dilution:2, carrier:'荷荷巴油', solvent:'', method:'太阳穴/后颈极少量点涂，避眼周', author:'经典取向', notes:'避免婴幼儿面部；部分人对薄荷敏感', oils:[
+        {name:'欧薄荷', amount:10, note:'滴'},
+        {name:'野地薰衣草', amount:6, note:'滴'}
+      ]},
+      {name:'依兰依兰·花香平衡', purpose:'舒缓焦虑·心率感受', total:30, dilution:0.8, carrier:'荷荷巴油', solvent:'', method:'锁骨/腕内轻点涂', author:'经典取向', notes:'依兰依兰≤0.8%，敏感肤质再降', oils:[
+        {name:'依兰依兰', amount:4, note:'滴'},
+        {name:'天竺葵', amount:6, note:'滴'},
+        {name:'檀香', amount:4, note:'滴'}
+      ]},
+      {name:'乳香·冥想呼吸', purpose:'呼吸·冥想', total:'', dilution:'', carrier:'', solvent:'', method:'扩香/嗅吸；或 2–3% 点涂', author:'经典取向', notes:'与木质类并用以沉静心绪', oils:[
+        {name:'乳香', amount:8, note:'滴'},
+        {name:'雪松', amount:4, note:'滴'},
+        {name:'广藿香', amount:2, note:'滴'}
+      ]},
+      {name:'广藿香·大地香调', purpose:'稳态·接地', total:'', dilution:'', carrier:'', solvent:'', method:'扩香/点涂 2–3%', author:'经典取向', notes:'气味持久，可少量即足', oils:[
+        {name:'广藿香', amount:4, note:'滴'},
+        {name:'檀香', amount:4, note:'滴'},
+        {name:'佛手柑', amount:4, note:'滴'}
+      ]},
+      {name:'天竺葵·皮脂平衡面油', purpose:'皮肤平衡', total:20, dilution:1, carrier:'荷荷巴油', solvent:'', method:'面部夜用少量（避眼周）', author:'经典取向', notes:'先斑贴；孕期谨慎', oils:[
+        {name:'天竺葵', amount:6, note:'滴'},
+        {name:'野地薰衣草', amount:4, note:'滴'},
+        {name:'乳香', amount:2, note:'滴'}
+      ]},
+      {name:'雪松+丝柏·净澄木调', purpose:'油脂/头皮护理', total:30, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'头皮按摩后清洗', author:'经典取向', notes:'避免流入眼睛', oils:[
+        {name:'雪松', amount:8, note:'滴'},
+        {name:'丝柏', amount:6, note:'滴'},
+        {name:'迷迭香', amount:4, note:'滴'}
+      ]},
+      {name:'甜茴香·腹部舒缓', purpose:'消化·腹胀', total:20, dilution:1.5, carrier:'荷荷巴油', solvent:'', method:'腹部顺时针小范围轻柔按摩', author:'经典取向', notes:'甜茴香≤2.5%；孕期/哺乳/雌激素相关禁用', oils:[
+        {name:'甜茴香', amount:6, note:'滴'},
+        {name:'姜', amount:6, note:'滴'},
+        {name:'甜橙', amount:6, note:'滴'}
+      ]},
+      {name:'姜·温热循环', purpose:'寒凉体感·循环', total:30, dilution:2, carrier:'葡萄籽油', solvent:'', method:'四肢末端/腹部轻柔按摩', author:'经典取向', notes:'皮肤敏感者先小面积测试', oils:[
+        {name:'姜', amount:12, note:'滴'},
+        {name:'乳香', amount:6, note:'滴'},
+        {name:'甜橙', amount:6, note:'滴'}
+      ]},
+      {name:'玫瑰·心轮开合', purpose:'情绪抚慰·连结', total:10, dilution:1.5, carrier:'荷荷巴油', solvent:'', method:'胸前/腕内极少量点涂', author:'经典取向', notes:'高价精油用量少亦足', oils:[
+        {name:'玫瑰', amount:3, note:'滴'},
+        {name:'檀香', amount:3, note:'滴'},
+        {name:'甜橙', amount:4, note:'滴'}
+      ]},
+      {name:'檀香·沉静香水基', purpose:'木香基底', total:10, dilution:10, carrier:'荷荷巴油', solvent:'', method:'香水油基，脉搏点少量涂抹', author:'经典取向', notes:'点涂配方；敏感肌可降至5%', oils:[
+        {name:'檀香', amount:20, note:'滴'},
+        {name:'乳香', amount:10, note:'滴'},
+        {name:'广藿香', amount:6, note:'滴'}
+      ]},
+      {name:'甜橙·阳光厨房扩香', purpose:'愉悦·除味', total:'', dilution:'', carrier:'', solvent:'', method:'扩香通风环境', author:'经典取向', notes:'柑橘氧化后更易致敏，注意保质期', oils:[
+        {name:'甜橙', amount:10, note:'滴'},
+        {name:'雪松', amount:4, note:'滴'}
+      ]},
+      {name:'中国肉桂·极微暖调', purpose:'暖身香调（点缀）', total:30, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'仅肢体末端少量，避免黏膜/敏感区', author:'经典取向', notes:'桂皮类≤0.05–0.1%；本配方中“2滴”约 0.1% 左右', oils:[
+        {name:'中国肉桂', amount:2, note:'滴（极低）'},
+        {name:'姜', amount:8, note:'滴'},
+        {name:'广藿香', amount:6, note:'滴'},
+        {name:'甜橙', amount:6, note:'滴'}
+      ]},
+      {name:'艾草（蒿属）·闻香谨慎', purpose:'仅扩香·节气支持', total:'', dilution:'', carrier:'', solvent:'', method:'短时扩香或嗅吸，不建议皮肤应用', author:'经典取向', notes:'部分蒿属含侧柏酮等，神经毒风险；孕期/癫痫禁用', oils:[
+        {name:'艾草', amount:2, note:'滴（与薰衣草/乳香搭配）'},
+        {name:'野地薰衣草', amount:4, note:'滴'},
+        {name:'乳香', amount:3, note:'滴'}
+      ]}
+    ];
+    const ALL_PRESETS = PRESETS.concat(PRESETS_MORE);
+
+    // 若首次使用，自动导入预置
+    if(Array.isArray(recipes) && recipes.length===0){
+      // 将 PRESETS 的“滴”转换为近似 mL（按 20 滴/mL，仅存备注，不改数值）
+      PRESETS.forEach(p=> p.updatedAt = new Date().toISOString());
+      recipes = ALL_PRESETS.concat(recipes);
+      saveJSON(DB_KEY, recipes);
+    }
+
+    // 初始渲染扩展
+    renderLimits();
+
+    // ====== 权威书籍取向·扩展配方库（按“单油→多场景”）======
+    (function addAuthoritativeLibrary(){
+      const PRESET_VERSION = 'eo_authlib_v1';
+      if(localStorage.getItem(PRESET_VERSION)) return; // 只导入一次
+      const AUTH = [
+        // 野地薰衣草 Lavandula (wild)
+        {name:'薰衣草·助眠滚珠', purpose:'助眠·焦虑缓解', total:10, dilution:2, carrier:'荷荷巴油', solvent:'', method:'睡前腕内/胸前点涂', author:'权威扩展', notes:'温和广谱；敏感肌可降至1%', oils:[
+          {name:'野地薰衣草', amount:10, note:'滴'},
+          {name:'乳香', amount:4, note:'滴'},
+          {name:'檀香', amount:2, note:'滴'}
+        ]},
+        {name:'薰衣草·枕边喷雾', purpose:'睡眠·环境', total:50, dilution:1, carrier:'', solvent:'玫瑰纯露', method:'远距喷洒枕套/卧室空气', author:'权威扩展', notes:'勿直喷面部；织物先做隐蔽测试', oils:[
+          {name:'野地薰衣草', amount:20, note:'滴'},
+          {name:'甜橙', amount:10, note:'滴'},
+          {name:'乳香', amount:6, note:'滴'}
+        ]},
+
+        // 中国肉桂 Cinnamomum cassia
+        {name:'中国肉桂·暖身身体油（极低）', purpose:'温热循环', total:30, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'四肢末端少量按摩，避敏感区', author:'权威扩展', notes:'桂皮类≤0.05–0.1%；本配方2滴约0.1%', oils:[
+          {name:'中国肉桂', amount:2, note:'滴（极低）'},
+          {name:'姜', amount:10, note:'滴'},
+          {name:'广藿香', amount:6, note:'滴'},
+          {name:'甜橙', amount:6, note:'滴'}
+        ]},
+        {name:'中国肉桂·暖香扩香', purpose:'辛香提振·环境', total:'', dilution:'', carrier:'', solvent:'', method:'冬日扩香 15–20 分钟', author:'权威扩展', notes:'皮肤应用请遵守极低上限', oils:[
+          {name:'中国肉桂', amount:1, note:'滴'},
+          {name:'甜橙', amount:6, note:'滴'},
+          {name:'檀香', amount:2, note:'滴'}
+        ]},
+
+        // 艾草 Artemisia argyi（蒿属）
+        {name:'艾草·闻香支持（仅扩香）', purpose:'节气支持·环境', total:'', dilution:'', carrier:'', solvent:'', method:'短时扩香/嗅吸', author:'权威扩展', notes:'蒿属含侧柏酮等，孕期/癫痫禁用，不作皮肤用', oils:[
+          {name:'艾草', amount:2, note:'滴'},
+          {name:'野地薰衣草', amount:4, note:'滴'},
+          {name:'乳香', amount:3, note:'滴'}
+        ]},
+        {name:'艾草·木香净澄（仅扩香）', purpose:'沉静·环境', total:'', dilution:'', carrier:'', solvent:'', method:'通风环境短时扩香', author:'权威扩展', notes:'不建议皮肤应用', oils:[
+          {name:'艾草', amount:1, note:'滴'},
+          {name:'雪松', amount:4, note:'滴'},
+          {name:'丝柏', amount:3, note:'滴'}
+        ]},
+
+        // 依兰依兰 Cananga odorata
+        {name:'依兰依兰·花香平衡（0.8%）', purpose:'舒缓焦虑·情绪', total:30, dilution:0.8, carrier:'荷荷巴油', solvent:'', method:'锁骨/腕内少量点涂', author:'权威扩展', notes:'依兰≤0.8%，敏感者再降', oils:[
+          {name:'依兰依兰', amount:4, note:'滴'},
+          {name:'天竺葵', amount:6, note:'滴'},
+          {name:'檀香', amount:4, note:'滴'}
+        ]},
+        {name:'依兰依兰·花香扩香', purpose:'放松·浪漫', total:'', dilution:'', carrier:'', solvent:'', method:'扩香 15–30 分钟', author:'权威扩展', notes:'甜度较高，少量即可', oils:[
+          {name:'依兰依兰', amount:2, note:'滴'},
+          {name:'佛手柑', amount:4, note:'滴'},
+          {name:'乳香', amount:2, note:'滴'}
+        ]},
+
+        // 佛手柑 Citrus bergamia
+        {name:'佛手柑FCF·提振身体油', purpose:'愉悦·日用身体油', total:50, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'日间涂抹（FCF版本）', author:'权威扩展', notes:'若为冷压佛手柑，皮肤使用≤0.4%且避光', oils:[
+          {name:'佛手柑', amount:20, note:'滴（FCF）'},
+          {name:'天竺葵', amount:10, note:'滴'},
+          {name:'乳香', amount:8, note:'滴'}
+        ]},
+        {name:'佛手柑·晴朗扩香', purpose:'振奋·净味', total:'', dilution:'', carrier:'', solvent:'', method:'厨房/客厅扩香', author:'权威扩展', notes:'冷压版仅限扩香或避光使用', oils:[
+          {name:'佛手柑', amount:8, note:'滴'},
+          {name:'雪松', amount:3, note:'滴'}
+        ]},
+
+        // 丝柏 Cupressus sempervirens
+        {name:'丝柏·腿部轻盈油', purpose:'循环·轻盈', total:50, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'小腿由下向上按摩', author:'权威扩展', notes:'与雪松/迷迭香协同', oils:[
+          {name:'丝柏', amount:12, note:'滴'},
+          {name:'雪松', amount:8, note:'滴'},
+          {name:'迷迭香', amount:6, note:'滴'}
+        ]},
+        {name:'丝柏·森林扩香', purpose:'木香净澄', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'木质清新', oils:[
+          {name:'丝柏', amount:4, note:'滴'},
+          {name:'佛手柑', amount:4, note:'滴'},
+          {name:'乳香', amount:2, note:'滴'}
+        ]},
+
+        // 雪松 Cedrus atlantica
+        {name:'雪松·胡须/头发油（1%）', purpose:'护理·定型', total:30, dilution:1, carrier:'荷荷巴油', solvent:'', method:'少量涂抹胡须/发梢', author:'权威扩展', notes:'避眼周', oils:[
+          {name:'雪松', amount:8, note:'滴'},
+          {name:'檀香', amount:4, note:'滴'},
+          {name:'广藿香', amount:2, note:'滴'}
+        ]},
+        {name:'雪松·沉稳扩香', purpose:'沉静·冥想', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与广藿香相得益彰', oils:[
+          {name:'雪松', amount:5, note:'滴'},
+          {name:'广藿香', amount:2, note:'滴'},
+          {name:'佛手柑', amount:3, note:'滴'}
+        ]},
+
+        // 乳香 Boswellia carterii
+        {name:'乳香·面部油（0.7%）', purpose:'修护·夜用', total:20, dilution:0.7, carrier:'荷荷巴油', solvent:'', method:'夜间少量，避眼周', author:'权威扩展', notes:'温和稳重', oils:[
+          {name:'乳香', amount:4, note:'滴'},
+          {name:'野地薰衣草', amount:3, note:'滴'}
+        ]},
+        {name:'乳香·冥想扩香', purpose:'沉静·呼吸', total:'', dilution:'', carrier:'', solvent:'', method:'扩香/嗅吸', author:'权威扩展', notes:'与木香/柑橘搭配', oils:[
+          {name:'乳香', amount:6, note:'滴'},
+          {name:'檀香', amount:3, note:'滴'}
+        ]},
+
+        // 甜茴香 Foeniculum vulgare
+        {name:'甜茴香·消化滚珠（1.5%）', purpose:'腹胀·消化', total:20, dilution:1.5, carrier:'荷荷巴油', solvent:'', method:'腹部顺时针小范围点涂', author:'权威扩展', notes:'上限2.5%；孕期/哺乳/雌激素相关禁用', oils:[
+          {name:'甜茴香', amount:6, note:'滴'},
+          {name:'姜', amount:6, note:'滴'},
+          {name:'甜橙', amount:4, note:'滴'}
+        ]},
+        {name:'甜茴香·清新扩香', purpose:'净味·提神', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'甜香辛口，少量即可', oils:[
+          {name:'甜茴香', amount:2, note:'滴'},
+          {name:'佛手柑', amount:5, note:'滴'}
+        ]},
+
+        // 迷迭香 Rosmarinus officinalis
+        {name:'迷迭香·专注滚珠（2%）', purpose:'学习办公·清醒', total:10, dilution:2, carrier:'葡萄籽油', solvent:'', method:'太阳穴/颈后避眼', author:'权威扩展', notes:'癫痫史慎用；避免婴幼儿面部', oils:[
+          {name:'迷迭香', amount:8, note:'滴'},
+          {name:'欧薄荷', amount:4, note:'滴'},
+          {name:'丝柏', amount:2, note:'滴'}
+        ]},
+        {name:'迷迭香·清醒扩香', purpose:'提神·空气清新', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与柑橘并用更明亮', oils:[
+          {name:'迷迭香', amount:5, note:'滴'},
+          {name:'甜橙', amount:4, note:'滴'}
+        ]},
+
+        // 广藿香 Pogostemon cablin
+        {name:'广藿香·接地香水油（5%）', purpose:'香水基底·稳态', total:10, dilution:5, carrier:'荷荷巴油', solvent:'', method:'脉搏点点涂', author:'权威扩展', notes:'留香久，剂量从低', oils:[
+          {name:'广藿香', amount:10, note:'滴'},
+          {name:'檀香', amount:8, note:'滴'},
+          {name:'乳香', amount:4, note:'滴'}
+        ]},
+        {name:'广藿香·木香扩香', purpose:'沉静·空间', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与雪松/佛手柑协调', oils:[
+          {name:'广藿香', amount:3, note:'滴'},
+          {name:'雪松', amount:4, note:'滴'},
+          {name:'佛手柑', amount:3, note:'滴'}
+        ]},
+
+        // 姜 Zingiber officinale
+        {name:'姜·温暖身体油（2%）', purpose:'寒凉体感·循环', total:50, dilution:2, carrier:'葡萄籽油', solvent:'', method:'四肢末端与腹部按摩', author:'权威扩展', notes:'敏感皮肤先小范围测试', oils:[
+          {name:'姜', amount:20, note:'滴'},
+          {name:'乳香', amount:10, note:'滴'},
+          {name:'甜橙', amount:10, note:'滴'}
+        ]},
+        {name:'姜·暖香扩香', purpose:'辛香·舒适', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与柑橘并用柔和', oils:[
+          {name:'姜', amount:3, note:'滴'},
+          {name:'甜橙', amount:6, note:'滴'},
+          {name:'檀香', amount:2, note:'滴'}
+        ]},
+
+        // 玫瑰 Rosa damascena
+        {name:'玫瑰·情绪抚慰油（1%）', purpose:'心情·连结', total:20, dilution:1, carrier:'荷荷巴油', solvent:'', method:'胸前/腕内轻点涂', author:'权威扩展', notes:'少量即足', oils:[
+          {name:'玫瑰', amount:4, note:'滴'},
+          {name:'檀香', amount:4, note:'滴'},
+          {name:'甜橙', amount:4, note:'滴'}
+        ]},
+        {name:'玫瑰·花束扩香', purpose:'浪漫·放松', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与薰衣草相配', oils:[
+          {name:'玫瑰', amount:2, note:'滴'},
+          {name:'野地薰衣草', amount:4, note:'滴'},
+          {name:'佛手柑', amount:3, note:'滴'}
+        ]},
+
+        // 檀香 Santalum album
+        {name:'檀香·冥想香水油（10%）', purpose:'沉静·专注', total:10, dilution:10, carrier:'荷荷巴油', solvent:'', method:'脉搏点少量', author:'权威扩展', notes:'敏感肌可降至5%', oils:[
+          {name:'檀香', amount:20, note:'滴'},
+          {name:'乳香', amount:10, note:'滴'},
+          {name:'广藿香', amount:6, note:'滴'}
+        ]},
+        {name:'檀香·木香扩香', purpose:'冥想·空间', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'温润木香', oils:[
+          {name:'檀香', amount:4, note:'滴'},
+          {name:'雪松', amount:4, note:'滴'},
+          {name:'乳香', amount:3, note:'滴'}
+        ]},
+
+        // 天竺葵 Pelargonium graveolens
+        {name:'天竺葵·经期舒缓（2%）', purpose:'腹部不适', total:30, dilution:2, carrier:'荷荷巴油', solvent:'', method:'下腹/腰骶部轻柔按摩', author:'权威扩展', notes:'孕期不使用', oils:[
+          {name:'天竺葵', amount:12, note:'滴'},
+          {name:'野地薰衣草', amount:10, note:'滴'},
+          {name:'姜', amount:6, note:'滴'}
+        ]},
+        {name:'天竺葵·平衡扩香', purpose:'舒缓·花草调', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'与柑橘和谐', oils:[
+          {name:'天竺葵', amount:3, note:'滴'},
+          {name:'甜橙', amount:5, note:'滴'}
+        ]},
+
+        // 甜橙 Citrus sinensis
+        {name:'甜橙·愉悦身体油（1%）', purpose:'轻松·日用', total:50, dilution:1, carrier:'葡萄籽油', solvent:'', method:'日常身体保养', author:'权威扩展', notes:'柑橘氧化易致敏，注意新鲜度', oils:[
+          {name:'甜橙', amount:20, note:'滴'},
+          {name:'乳香', amount:8, note:'滴'},
+          {name:'雪松', amount:6, note:'滴'}
+        ]},
+        {name:'甜橙·厨房扩香', purpose:'除味·愉悦', total:'', dilution:'', carrier:'', solvent:'', method:'厨房/客厅扩香', author:'权威扩展', notes:'清新明亮', oils:[
+          {name:'甜橙', amount:10, note:'滴'},
+          {name:'丝柏', amount:3, note:'滴'}
+        ]},
+
+        // 欧薄荷 Mentha x piperita
+        {name:'欧薄荷·头部滚珠（2%）', purpose:'头部紧张', total:10, dilution:2, carrier:'荷荷巴油', solvent:'', method:'太阳穴/后颈避眼周', author:'权威扩展', notes:'避免接触婴幼儿面部；G6PD缺乏慎用', oils:[
+          {name:'欧薄荷', amount:10, note:'滴'},
+          {name:'野地薰衣草', amount:6, note:'滴'}
+        ]},
+        {name:'欧薄荷·清凉扩香', purpose:'清新·提神', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展', notes:'薄荷气味占据性强，少量即可', oils:[
+          {name:'欧薄荷', amount:2, note:'滴'},
+          {name:'佛手柑', amount:6, note:'滴'}
+        ]}
+      ];
+      // 合并写入
+      AUTH.forEach(p=> p.updatedAt = new Date().toISOString());
+      recipes = AUTH.concat(recipes);
+      saveJSON(DB_KEY, recipes);
+      localStorage.setItem(PRESET_VERSION, '1');
+      renderTable();
+    })();
+
+  
+    // ====== PDF 模板预留（用于后续一键导出） ======
+    const PDF_TEMPLATE = {
+      title: '权威芳疗配方手册',
+      sections: ['花香类','木香类','草药类','柑橘类','香料类'],
+      footer: '© 2025 Aromatherapy Research — aligned with Tisserand & Young (2nd ed.)'
+    };
+
+    // 关键词标签自动生成（基于用途）
+    function autoTags(purpose){
+      const map = [
+        ['助眠','睡眠','眠','睡'],['舒缓','放松','减压','焦虑'],['提神','清醒','专注','学习','办公'],
+        ['修复','晒后','面部','皮肤','保湿'],['循环','温暖','寒凉','经期'],['冥想','沉静','接地'],
+        ['净味','除味','厨房'],['香水','点涂','脉搏']
+      ];
+      const tags = [];
+      const s = String(purpose||'');
+      map.forEach(arr=>{ if(arr.some(k=> s.includes(k))) tags.push(arr[0]); });
+      return Array.from(new Set(tags)).slice(0,5);
+    }
+
+    // ====== 二期：权威扩展配方库（每油补足 3–4 场景） ======
+    (function addAuthoritativeLibraryV2(){
+      const VERSION = 'eo_authlib_v2';
+      if(localStorage.getItem(VERSION)) return;
+      const AUTH2 = [
+        // 花香类 —— 薰衣草、依兰、玫瑰、天竺葵
+        {name:'薰衣草（Lavandula angustifolia）·晒后修复油', purpose:'镇静舒缓·修复晒后', total:30, dilution:1, carrier:'荷荷巴油', solvent:'', method:'洁面后少量轻拍（避眼周）', author:'权威扩展·二期', notes:'可加维E 0.2–0.5%', storageLife:24, storageTips:'琥珀玻璃/避光/阴凉/尽量满瓶', contraindications:'敏感肌先斑贴', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'野地薰衣草',amount:8,note:'滴'},{name:'乳香',amount:4,note:'滴'},{name:'玫瑰',amount:2,note:'滴'}]},
+        {name:'薰衣草（Lavandula angustifolia）·舒缓沐浴油', purpose:'放松入睡·肌肉舒缓', total:20, dilution:2, carrier:'荷荷巴油', solvent:'', method:'与温水充分乳化后入浴', author:'权威扩展·二期', notes:'浴用注意地面防滑', storageLife:24, storageTips:'避光密封', contraindications:'低血压者谨慎热浴', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'野地薰衣草',amount:16,note:'滴'},{name:'檀香',amount:4,note:'滴'}]},
+
+        {name:'依兰依兰（Cananga odorata）·镇静香发油', purpose:'情绪舒缓·发梢滋养', total:20, dilution:0.8, carrier:'荷荷巴油', solvent:'', method:'发梢少量抹匀', author:'权威扩展·二期', notes:'依兰≤0.8%', storageLife:24, storageTips:'避光', contraindications:'油性头皮少量使用', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'依兰依兰',amount:4,note:'滴'},{name:'檀香',amount:3,note:'滴'}]},
+        {name:'依兰依兰（Cananga odorata）·放松浴油', purpose:'舒缓焦虑·睡前放松', total:20, dilution:0.8, carrier:'荷荷巴油', solvent:'', method:'与沐浴乳化后入浴', author:'权威扩展·二期', notes:'香甜度高，少量即足', storageLife:24, storageTips:'避光密封', contraindications:'敏感肌降至0.5%', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'依兰依兰',amount:3,note:'滴'},{name:'野地薰衣草',amount:5,note:'滴'}]},
+
+        {name:'玫瑰（Rosa damascena）·养肤面油', purpose:'保湿修护·细腻肤感', total:20, dilution:1, carrier:'荷荷巴油', solvent:'', method:'夜间1–2滴按压', author:'权威扩展·二期', notes:'高价精油少量足矣', storageLife:24, storageTips:'避光', contraindications:'香料敏感者先斑贴', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'玫瑰',amount:4,note:'滴'},{name:'乳香',amount:3,note:'滴'}]},
+        {name:'玫瑰（Rosa damascena）·情绪扩香', purpose:'情绪抚慰·连结', total:'', dilution:'', carrier:'', solvent:'', method:'扩香 15–30 分钟', author:'权威扩展·二期', notes:'与柑橘/薰衣草和谐', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'玫瑰',amount:2,note:'滴'},{name:'甜橙',amount:5,note:'滴'}]},
+
+        {name:'天竺葵（Pelargonium graveolens）·平衡面油', purpose:'皮脂调理·泛红舒缓', total:20, dilution:1, carrier:'荷荷巴油', solvent:'', method:'夜间少量避眼周', author:'权威扩展·二期', notes:'先斑贴', storageLife:24, storageTips:'避光', contraindications:'孕期谨慎', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'天竺葵',amount:6,note:'滴'},{name:'野地薰衣草',amount:4,note:'滴'}]},
+        {name:'天竺葵（Pelargonium graveolens）·舒缓喷雾', purpose:'舒缓紧张·空气喷雾', total:50, dilution:1, carrier:'', solvent:'玫瑰纯露', method:'远距喷洒，勿直喷面部', author:'权威扩展·二期', notes:'开封后冷藏', storageLife:6, storageTips:'冷藏/避光', contraindications:'—', pdfSection:'花香类', safetyFlag:'green', oils:[{name:'天竺葵',amount:12,note:'滴'},{name:'野地薰衣草',amount:8,note:'滴'}]},
+
+        // 木香类 —— 檀香、雪松、丝柏、乳香、广藿香
+        {name:'檀香（Santalum album）·夜间香水油', purpose:'冥想沉静·点涂香', total:10, dilution:10, carrier:'荷荷巴油', solvent:'', method:'脉搏点少量', author:'权威扩展·二期', notes:'敏感肌降至5%', storageLife:36, storageTips:'避光', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'檀香',amount:20,note:'滴'},{name:'乳香',amount:10,note:'滴'}]},
+        {name:'檀香（Santalum album）·木香扩香', purpose:'沉稳空间·冥想', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'温润木香', storageLife:36, storageTips:'—', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'檀香',amount:4,note:'滴'},{name:'广藿香',amount:2,note:'滴'},{name:'佛手柑',amount:3,note:'滴'}]},
+
+        {name:'雪松（Cedrus atlantica）·头皮净澄油', purpose:'头皮护理·油脂平衡', total:30, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'头皮按摩后清洗', author:'权威扩展·二期', notes:'避入眼', storageLife:12, storageTips:'避光/阴凉', contraindications:'头皮敏感者斑贴', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'雪松',amount:8,note:'滴'},{name:'迷迭香',amount:6,note:'滴'},{name:'丝柏',amount:4,note:'滴'}]},
+        {name:'雪松（Cedrus atlantica）·森林扩香', purpose:'净澄空间', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'与柑橘调和', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'雪松',amount:5,note:'滴'},{name:'甜橙',amount:5,note:'滴'}]},
+
+        {name:'丝柏（Cupressus sempervirens）·循环身体油', purpose:'腿部轻盈·循环', total:50, dilution:1.5, carrier:'葡萄籽油', solvent:'', method:'由下向上按摩', author:'权威扩展·二期', notes:'与雪松/迷迭香协同', storageLife:12, storageTips:'避光/阴凉', contraindications:'静脉曲张者轻柔按压', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'丝柏',amount:12,note:'滴'},{name:'雪松',amount:8,note:'滴'},{name:'迷迭香',amount:6,note:'滴'}]},
+        {name:'丝柏（Cupressus sempervirens）·净澄扩香', purpose:'木香清新', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'—', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'丝柏',amount:4,note:'滴'},{name:'佛手柑',amount:4,note:'滴'}]},
+
+        {name:'乳香（Boswellia carterii）·修护面油', purpose:'夜间修护·细致肤感', total:20, dilution:0.7, carrier:'荷荷巴油', solvent:'', method:'夜间1–2滴', author:'权威扩展·二期', notes:'避眼周', storageLife:24, storageTips:'避光', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'乳香',amount:4,note:'滴'},{name:'野地薰衣草',amount:3,note:'滴'}]},
+        {name:'乳香（Boswellia carterii）·冥想扩香', purpose:'沉静呼吸', total:'', dilution:'', carrier:'', solvent:'', method:'扩香/嗅吸', author:'权威扩展·二期', notes:'—', storageLife:24, storageTips:'—', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'乳香',amount:6,note:'滴'},{name:'檀香',amount:3,note:'滴'}]},
+
+        {name:'广藿香（Pogostemon cablin）·稳态香水油', purpose:'接地·脉搏点', total:10, dilution:5, carrier:'荷荷巴油', solvent:'', method:'少量点涂', author:'权威扩展·二期', notes:'留香久', storageLife:36, storageTips:'避光', contraindications:'孕期低浓度', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'广藿香',amount:10,note:'滴'},{name:'檀香',amount:8,note:'滴'}]},
+        {name:'广藿香（Pogostemon cablin）·木香扩香', purpose:'沉静空间', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'—', storageLife:36, storageTips:'—', contraindications:'—', pdfSection:'木香类', safetyFlag:'green', oils:[{name:'广藿香',amount:3,note:'滴'},{name:'雪松',amount:4,note:'滴'}]},
+
+        // 草药类 —— 迷迭香、艾草、甜茴香、姜
+        {name:'迷迭香（Rosmarinus officinalis）·头皮按摩油', purpose:'清醒·循环·头皮', total:30, dilution:2, carrier:'葡萄籽油', solvent:'', method:'头皮按摩后清洗', author:'权威扩展·二期', notes:'癫痫史慎用', storageLife:12, storageTips:'避光/阴凉', contraindications:'避免婴幼儿面部', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'迷迭香',amount:12,note:'滴'},{name:'丝柏',amount:6,note:'滴'},{name:'雪松',amount:6,note:'滴'}]},
+        {name:'迷迭香（Rosmarinus officinalis）·学习扩香', purpose:'专注清醒', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'与柑橘明亮', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'迷迭香',amount:5,note:'滴'},{name:'甜橙',amount:5,note:'滴'}]},
+
+        {name:'艾草（Artemisia argyi）·闻香谨慎', purpose:'节气支持（仅扩香）', total:'', dilution:'', carrier:'', solvent:'', method:'短时扩香/嗅吸', author:'权威扩展·二期', notes:'孕期/癫痫禁用；不作皮肤用', storageLife:12, storageTips:'—', contraindications:'孕期/癫痫禁用', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'艾草',amount:1,note:'滴'},{name:'乳香',amount:3,note:'滴'}]},
+        {name:'艾草（Artemisia argyi）·木质扩香', purpose:'沉静空间（仅扩香）', total:'', dilution:'', carrier:'', solvent:'', method:'通风环境使用', author:'权威扩展·二期', notes:'—', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'艾草',amount:1,note:'滴'},{name:'雪松',amount:4,note:'滴'}]},
+
+        {name:'甜茴香（Foeniculum vulgare）·腹部滚珠', purpose:'消化舒缓', total:20, dilution:1.5, carrier:'荷荷巴油', solvent:'', method:'腹部小范围顺时针', author:'权威扩展·二期', notes:'上限2.5%', storageLife:24, storageTips:'避光', contraindications:'孕期/哺乳/雌激素相关禁用', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'甜茴香',amount:6,note:'滴'},{name:'姜',amount:6,note:'滴'}]},
+        {name:'甜茴香（Foeniculum vulgare）·清新扩香', purpose:'净味提神', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'少量即可', storageLife:24, storageTips:'—', contraindications:'—', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'甜茴香',amount:2,note:'滴'},{name:'佛手柑',amount:5,note:'滴'}]},
+
+        {name:'姜（Zingiber officinale）·暖腹滚珠', purpose:'寒凉体感·循环', total:10, dilution:2, carrier:'葡萄籽油', solvent:'', method:'腹部与脐周避敏感区', author:'权威扩展·二期', notes:'先小面积测试', storageLife:12, storageTips:'避光/阴凉', contraindications:'敏感肌谨慎', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'姜',amount:8,note:'滴'},{name:'乳香',amount:4,note:'滴'}]},
+        {name:'姜（Zingiber officinale）·暖香扩香', purpose:'辛香舒适', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'与柑橘柔和', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'草药类', safetyFlag:'green', oils:[{name:'姜',amount:3,note:'滴'},{name:'甜橙',amount:6,note:'滴'}]},
+
+        // 柑橘类 —— 佛手柑、甜橙
+        {name:'佛手柑（Citrus bergamia）·清晨心情喷雾（FCF）', purpose:'心情晴朗·空气喷洒', total:50, dilution:1, carrier:'', solvent:'玫瑰纯露', method:'室内/织物远距喷洒', author:'权威扩展·二期', notes:'若冷压版，外用≤0.4%且避光', storageLife:6, storageTips:'冷藏/避光', contraindications:'—', pdfSection:'柑橘类', safetyFlag:'green', oils:[{name:'佛手柑',amount:15,note:'滴（FCF）'},{name:'天竺葵',amount:6,note:'滴'}]},
+        {name:'佛手柑（Citrus bergamia）·办公扩香', purpose:'振奋清新', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'—', storageLife:6, storageTips:'—', contraindications:'—', pdfSection:'柑橘类', safetyFlag:'green', oils:[{name:'佛手柑',amount:8,note:'滴'},{name:'雪松',amount:3,note:'滴'}]},
+
+        {name:'甜橙（Citrus sinensis）·阳光身体油', purpose:'愉悦·日用身体', total:50, dilution:1, carrier:'葡萄籽油', solvent:'', method:'沐浴后薄涂', author:'权威扩展·二期', notes:'柑橘易氧化，注意新鲜', storageLife:6, storageTips:'避光/阴凉', contraindications:'氧化后致敏风险增', pdfSection:'柑橘类', safetyFlag:'green', oils:[{name:'甜橙',amount:20,note:'滴'},{name:'乳香',amount:8,note:'滴'}]},
+        {name:'甜橙（Citrus sinensis）·厨房扩香', purpose:'除味·愉悦', total:'', dilution:'', carrier:'', solvent:'', method:'厨房/客厅扩香', author:'权威扩展·二期', notes:'—', storageLife:6, storageTips:'—', contraindications:'—', pdfSection:'柑橘类', safetyFlag:'green', oils:[{name:'甜橙',amount:10,note:'滴'},{name:'丝柏',amount:3,note:'滴'}]},
+
+        // 香料类 —— 中国肉桂、欧薄荷
+        {name:'中国肉桂（Cinnamomum cassia）·暖香足浴油（极低）', purpose:'温热循环·足浴前乳化', total:20, dilution:0.5, carrier:'葡萄籽油', solvent:'', method:'滴入足浴水中充分搅拌', author:'权威扩展·二期', notes:'桂皮类≤0.05–0.1%；皮肤强刺激', storageLife:12, storageTips:'避光', contraindications:'孕期/儿童/黏膜禁用', pdfSection:'香料类', safetyFlag:'green', oils:[{name:'中国肉桂',amount:1,note:'滴（极低）'},{name:'姜',amount:6,note:'滴'},{name:'甜橙',amount:6,note:'滴'}]},
+        {name:'中国肉桂（Cinnamomum cassia）·冬日扩香', purpose:'辛香提振·环境', total:'', dilution:'', carrier:'', solvent:'', method:'冬日扩香 15–20 分钟', author:'权威扩展·二期', notes:'皮肤应用遵守极低上限', storageLife:12, storageTips:'—', contraindications:'—', pdfSection:'香料类', safetyFlag:'green', oils:[{name:'中国肉桂',amount:1,note:'滴'},{name:'檀香',amount:2,note:'滴'},{name:'甜橙',amount:6,note:'滴'}]},
+
+        {name:'欧薄荷（Mentha × piperita）·提神滚珠', purpose:'清醒·头部放松', total:10, dilution:2, carrier:'荷荷巴油', solvent:'', method:'太阳穴/颈后避眼', author:'权威扩展·二期', notes:'避免接触婴幼儿面部；G6PD缺乏慎用', storageLife:24, storageTips:'避光', contraindications:'心律不齐慎用', pdfSection:'香料类', safetyFlag:'green', oils:[{name:'欧薄荷',amount:10,note:'滴'},{name:'野地薰衣草',amount:6,note:'滴'}]},
+        {name:'欧薄荷（Mentha × piperita）·清凉扩香', purpose:'清新空气·提神', total:'', dilution:'', carrier:'', solvent:'', method:'扩香', author:'权威扩展·二期', notes:'薄荷占香强，少量即可', storageLife:24, storageTips:'—', contraindications:'—', pdfSection:'香料类', safetyFlag:'green', oils:[{name:'欧薄荷',amount:2,note:'滴'},{name:'佛手柑',amount:6,note:'滴'}]}
+      ];
+
+      AUTH2.forEach(p=>{ p.tags = autoTags(p.purpose); p.updatedAt = new Date().toISOString(); });
+      recipes = AUTH2.concat(recipes);
+      saveJSON(DB_KEY, recipes);
+      localStorage.setItem(VERSION,'1');
+      renderTable();
+    })();
+
+  </script>
+</body>
+</html>

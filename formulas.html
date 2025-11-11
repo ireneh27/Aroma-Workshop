@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="您的定制配方 - 基于健康状况的个性化推荐">
+    <title>您的定制配方 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html" aria-current="page">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: 8px 15px; color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop">↑</button>
+
+    <main id="main-content" class="container">
+        <h1>您的定制配方</h1>
+
+        <!-- 个性化推荐区域 -->
+        <div id="personalizedSuggestions" class="mt-lg mb-lg">
+            <!-- 内容将由JavaScript动态生成 -->
+        </div>
+
+        <!-- 引导用户查看完整配方库 -->
+        <div class="text-center mt-3xl mb-3xl p-xl" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: var(--radius-xl);">
+            <p style="color: var(--secondary-color); margin-bottom: var(--spacing-xl); font-size: var(--text-base);">
+                查看所有配方，按介质类型分类浏览，快速找到适合您的配方方案
+            </p>
+            <a href="formula-library.html" class="btn btn-primary btn-large">前往经典配方库 →</a>
+        </div>
+        
+        <div class="footer">
+            <p>
+                本指南专为您的健康状况定制<br>
+                建议连续使用6-8周后评估效果<br>
+                如有任何不适,请立即停用并咨询专业人士<br><br>
+                <strong>制定日期:2025年11月</strong>
+            </p>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="questionnaire.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="ai-service.js"></script>
+    <script src="formula-suggestions.js"></script>
+    <script src="formulas-page.js"></script>
+</body>
+</html>

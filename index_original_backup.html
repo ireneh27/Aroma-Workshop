@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="个性化芳疗方案使用指南 - 定制化精油配方与安全使用手册">
+    <title>个性化芳疗方案使用指南</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c2c2c;
+            --secondary-color: #666;
+            --accent-color: #c44;
+            --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-color: #fafafa;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 20px rgba(0,0,0,0.06);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+            --transition: all 0.3s ease;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            line-height: 1.8;
+            color: var(--primary-color);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* 固定导航栏 */
+        .fixed-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+            padding: 15px 0;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .fixed-nav.visible {
+            transform: translateY(0);
+        }
+
+        .fixed-nav .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fixed-nav .logo {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .fixed-nav nav a {
+            margin-left: 20px;
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
+        }
+
+        .fixed-nav nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* 移动端菜单按钮 */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 60px 80px;
+            box-shadow: var(--shadow);
+            border-radius: 12px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid;
+            border-image: var(--accent-gradient) 1;
+            padding-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--secondary-color);
+            margin-bottom: 50px;
+            font-weight: 300;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+            padding-left: 15px;
+            scroll-margin-top: 80px;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        h4 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        /* 目录导航 */
+        .table-of-contents {
+            background-color: #f5f5f5;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .table-of-contents h3 {
+            margin-top: 0;
+        }
+
+        .table-of-contents ul {
+            list-style: none;
+            padding-left: 0;
+            line-height: 2;
+        }
+
+        .table-of-contents a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .table-of-contents a:hover {
+            color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        /* 精油卡片网格 */
+        .oil-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .oil-card {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            transition: var(--transition);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .oil-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-gradient);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .oil-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .oil-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-4px);
+            border-color: transparent;
+        }
+
+        .oil-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .oil-latin {
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .oil-properties {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .oil-caution {
+            font-size: 12px;
+            color: var(--accent-color);
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #fff5f5;
+            border-left: 3px solid var(--accent-color);
+            border-radius: 2px;
+        }
+
+        /* 配方盒子 */
+        .formula-box {
+            background-color: #f8f8f8;
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .formula-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .formula-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .formula-subtitle {
+            font-size: 13px;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .ingredient-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 15px 0;
+        }
+
+        .ingredient-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ingredient-list li:last-child {
+            border-bottom: none;
+        }
+
+        .usage-box {
+            background-color: #fff;
+            border-left: 3px solid var(--primary-color);
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 2px;
+        }
+
+        /* 警告盒子 */
+        .warning-box {
+            background-color: #fff9e6;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h3 {
+            color: #f57c00;
+            margin-top: 0;
+        }
+
+        .safety-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .safety-item:last-child {
+            border-bottom: none;
+        }
+
+        .safety-label {
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+
+        /* 时间轴 */
+        .timeline {
+            margin: 25px 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border-radius: 4px;
+        }
+
+        .timeline-item {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-time {
+            min-width: 120px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .timeline-content {
+            flex: 1;
+            color: #555;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            overflow-x: auto;
+            display: block;
+        }
+
+        table tbody {
+            display: table;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* 注释框 */
+        .note {
+            font-size: 13px;
+            color: var(--secondary-color);
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-left: 3px solid #999;
+            margin: 20px 0;
+            border-radius: 2px;
+        }
+
+        /* 用量摘要卡片 */
+        .dosage-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .dosage-card {
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .dosage-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .dosage-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .dosage-label {
+            font-size: 13px;
+            color: var(--secondary-color);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .oil-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline-item {
+                flex-direction: column;
+            }
+
+            .timeline-time {
+                margin-bottom: 5px;
+                min-width: auto;
+            }
+
+            .fixed-nav .nav-content {
+                flex-wrap: wrap;
+            }
+
+            .fixed-nav nav {
+                display: none;
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            .fixed-nav nav.active {
+                display: block;
+            }
+
+            .fixed-nav nav a {
+                display: block;
+                margin: 10px 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .fixed-nav,
+            .back-to-top,
+            .menu-toggle {
+                display: none !important;
+            }
+
+            .oil-card,
+            .formula-box,
+            .dosage-card {
+                break-inside: avoid;
+            }
+
+            h2 {
+                page-break-after: avoid;
+            }
+        }
+
+        /* 加载动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* 页脚样式 */
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid var(--primary-color);
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: var(--secondary-color);
+            line-height: 2;
+        }
+
+        /* Formula Builder Styles */
+        .formula-builder {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 12px;
+            margin: 40px 0;
+            color: white;
+        }
+
+        .formula-builder h2 {
+            color: white;
+            border: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .builder-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .formula-ingredients {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .ingredient-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .ingredient-info {
+            flex: 1;
+        }
+
+        .ingredient-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .ingredient-details {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .ingredient-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .drops-input {
+            width: 80px;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .formula-summary {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .safety-check {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .safety-check.safe {
+            background: rgba(16, 185, 129, 0.3);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .safety-check.warning {
+            background: rgba(245, 158, 11, 0.3);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .safety-check.danger {
+            background: rgba(239, 68, 68, 0.3);
+            border-left: 4px solid #ef4444;
+        }
+
+        .saved-formulas {
+            margin-top: 40px;
+        }
+
+        .saved-formula-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .saved-formula-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .formula-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .formula-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .formula-date {
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .formula-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-color);
+        }
+
+        @media (max-width: 768px) {
+            .builder-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .formula-builder {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav">
+        <div class="nav-content">
+            <div class="logo">个性化芳疗方案</div>
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <nav id="navMenu">
+                <a href="#health-profile">健康状况</a>
+                <a href="#essential-oils">精油介绍</a>
+                <a href="#safety">安全须知</a>
+                <a href="#formula-builder">配方实验</a>
+                <a href="#formulas">定制配方</a>
+                <a href="#schedule">使用时间</a>
+                <a href="#making">制作指南</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop">↑</button>
+
+    <div class="container">
+        <h1>个性化芳疗方案使用指南</h1>
+        <p class="subtitle">定制化精油配方 · 安全使用手册 · 2025年11月</p>
+
+        <!-- 目录 -->
+        <div class="table-of-contents fade-in">
+            <h3>目录导航</h3>
+            <ul>
+                <li>→ <a href="#health-profile">一、健康状况分析</a></li>
+                <li>→ <a href="#essential-oils">二、精油库介绍</a></li>
+                <li>→ <a href="#safety">三、安全使用须知</a></li>
+                <li>→ <a href="#formula-builder">四、配方实验器</a></li>
+                <li>→ <a href="#formulas">五、定制配方方案</a></li>
+                <li>→ <a href="#schedule">六、每日使用时间表</a></li>
+                <li>→ <a href="#making">七、配方制作指南</a></li>
+            </ul>
+        </div>
+
+        <!-- 第一部分:健康状况分析 -->
+        <h2 id="health-profile">一、健康状况分析</h2>
+        
+        <div style="background-color: #fafafa; padding: 25px; margin: 20px 0; border-radius: 4px;">
+            <h3 style="margin-top: 0;">主要症状</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>症状类型</th>
+                        <th>具体表现</th>
+                        <th>调理方向</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>循环问题</strong></td>
+                        <td>手心发热、脚心发凉</td>
+                        <td>温阳散寒、促进末梢循环</td>
+                    </tr>
+                    <tr>
+                        <td><strong>睡眠障碍</strong></td>
+                        <td>睡眠质量差、耳鸣</td>
+                        <td>安神定志、深层放松</td>
+                    </tr>
+                    <tr>
+                        <td><strong>脾胃功能</strong></td>
+                        <td>打嗝、齿痕</td>
+                        <td>健脾理气、温中和胃</td>
+                    </tr>
+                    <tr>
+                        <td><strong>妇科问题</strong></td>
+                        <td>痛经、舌下血瘀</td>
+                        <td>温经活血、调经止痛</td>
+                    </tr>
+                    <tr>
+                        <td><strong>体质基础</strong></td>
+                        <td>脾肾两虚</td>
+                        <td>补益脾肾、固本培元</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note">
+            <strong>调理策略:</strong>本方案采用分时段、分部位的精油使用方法,白天侧重理气清神,晚间侧重补益调理,经期强化温经活血,实现全方位的功能性改善。
+        </div>
+
+        <!-- 第二部分:精油库介绍 -->
+        <h2 id="essential-oils">二、精油库介绍</h2>
+
+        <h3>现有精油详细资料</h3>
+        <div class="oil-grid">
+            <!-- 薰衣草 -->
+            <div class="oil-card">
+                <div class="oil-name">野地薰衣草</div>
+                <div class="oil-latin">Lavandula angustifolia</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>镇静安神、助眠、缓解焦虑、抗痉挛<br>
+                    <strong>适用症状:</strong>失眠、耳鸣、神经紧张<br>
+                    <strong>能量属性:</strong>平衡中枢神经、深层放松
+                </div>
+                <div class="oil-caution">孕早期慎用</div>
+            </div>
+
+            <!-- 中国肉桂 -->
+            <div class="oil-card">
+                <div class="oil-name">中国肉桂</div>
+                <div class="oil-latin">Cinnamomum cassia</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>温阳散寒、活血通络、温补肾阳<br>
+                    <strong>适用症状:</strong>脚心发凉、脾肾阳虚、痛经<br>
+                    <strong>能量属性:</strong>强烈温热、激发阳气
+                </div>
+                <div class="oil-caution">刺激性强,需低浓度使用(≤1%),孕期禁用,敏感肌慎用</div>
+            </div>
+
+            <!-- 艾草 -->
+            <div class="oil-card">
+                <div class="oil-name">艾草</div>
+                <div class="oil-latin">Artemisia argyi</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>温经止血、散寒止痛、理气活血<br>
+                    <strong>适用症状:</strong>痛经、血瘀、宫寒<br>
+                    <strong>能量属性:</strong>温通经络、祛湿散寒
+                </div>
+                <div class="oil-caution">孕期禁用</div>
+            </div>
+
+            <!-- 依兰依兰 -->
+            <div class="oil-card">
+                <div class="oil-name">依兰依兰</div>
+                <div class="oil-latin">Cananga odorata</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>抗抑郁、平衡激素、舒缓神经<br>
+                    <strong>适用症状:</strong>情绪低落、压力、经前综合征<br>
+                    <strong>能量属性:</strong>温暖愉悦、平衡情绪
+                </div>
+                <div class="oil-caution">浓度过高可能引起头痛</div>
+            </div>
+
+            <!-- 佛手柑 -->
+            <div class="oil-card">
+                <div class="oil-name">佛手柑</div>
+                <div class="oil-latin">Citrus bergamia</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>疏肝理气、缓解消化不良、提升情绪<br>
+                    <strong>适用症状:</strong>打嗝、胃胀、情绪抑郁<br>
+                    <strong>能量属性:</strong>清新振奋、理气解郁
+                </div>
+                <div class="oil-caution">光敏性精油,使用后12小时内避免日晒</div>
+            </div>
+
+            <!-- 丝柏 -->
+            <div class="oil-card">
+                <div class="oil-name">丝柏</div>
+                <div class="oil-latin">Cupressus sempervirens</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>收敛止血、促进循环、平衡神经<br>
+                    <strong>适用症状:</strong>静脉曲张、水肿、循环不良<br>
+                    <strong>能量属性:</strong>清凉收敛、平衡稳定
+                </div>
+                <div class="oil-caution">孕期慎用</div>
+            </div>
+
+            <!-- 雪松 -->
+            <div class="oil-card">
+                <div class="oil-name">雪松</div>
+                <div class="oil-latin">Cedrus atlantica</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>强壮补益、镇静安神、收敛固涩<br>
+                    <strong>适用症状:</strong>体质虚弱、焦虑不安、肾虚<br>
+                    <strong>能量属性:</strong>沉稳厚重、固本培元
+                </div>
+                <div class="oil-caution">孕期禁用</div>
+            </div>
+
+            <!-- 乳香 -->
+            <div class="oil-card">
+                <div class="oil-name">乳香</div>
+                <div class="oil-latin">Boswellia carterii</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>活血止痛、深层放松、抗炎、助眠<br>
+                    <strong>适用症状:</strong>慢性疼痛、血瘀、焦虑失眠<br>
+                    <strong>能量属性:</strong>温润舒缓、灵性沉静
+                </div>
+                <div class="oil-caution">安全性高,孕早期慎用</div>
+            </div>
+
+            <!-- 甜茴香 -->
+            <div class="oil-card">
+                <div class="oil-name">甜茴香</div>
+                <div class="oil-latin">Foeniculum vulgare</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>健脾理气、止呃、促进消化、通经<br>
+                    <strong>适用症状:</strong>打嗝、腹胀、消化不良<br>
+                    <strong>能量属性:</strong>温暖和缓、理气消胀
+                </div>
+                <div class="oil-caution">孕期禁用,癫痫患者禁用,不宜长期高浓度使用</div>
+            </div>
+
+            <!-- 迷迭香 -->
+            <div class="oil-card">
+                <div class="oil-name">迷迭香</div>
+                <div class="oil-latin">Rosmarinus officinalis</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>促进循环、提神醒脑、缓解疲劳<br>
+                    <strong>适用症状:</strong>四肢冰凉、疲劳、注意力不集中<br>
+                    <strong>能量属性:</strong>清新振奋、活血通络
+                </div>
+                <div class="oil-caution">孕期禁用,高血压患者慎用,癫痫患者禁用</div>
+            </div>
+
+            <!-- 广藿香 -->
+            <div class="oil-card">
+                <div class="oil-name">广藿香</div>
+                <div class="oil-latin">Pogostemon cablin</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>温脾化湿、止呕、安神、促进再生<br>
+                    <strong>适用症状:</strong>脾虚湿困、齿痕、焦虑<br>
+                    <strong>能量属性:</strong>温暖厚重、化湿醒脾
+                </div>
+                <div class="oil-caution">安全性高</div>
+            </div>
+
+            <!-- 姜 -->
+            <div class="oil-card">
+                <div class="oil-name">姜</div>
+                <div class="oil-latin">Zingiber officinale</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>温阳散寒、止痛、促进循环、温中止呃<br>
+                    <strong>适用症状:</strong>四肢冰凉、痛经、打嗝、胃寒<br>
+                    <strong>能量属性:</strong>辛热温通、散寒助阳
+                </div>
+                <div class="oil-caution">刺激性较强,敏感肌需低浓度使用</div>
+            </div>
+
+            <!-- 玫瑰 -->
+            <div class="oil-card">
+                <div class="oil-name">玫瑰</div>
+                <div class="oil-latin">Rosa damascena</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>活血化瘀、调经止痛、平衡激素、抗抑郁<br>
+                    <strong>适用症状:</strong>痛经、血瘀、情绪波动<br>
+                    <strong>能量属性:</strong>温柔滋养、活血调经
+                </div>
+                <div class="oil-caution">安全性高,孕期慎用</div>
+            </div>
+
+            <!-- 檀香 -->
+            <div class="oil-card">
+                <div class="oil-name">檀香</div>
+                <div class="oil-latin">Santalum album</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>温肾安神、定志助眠、抗焦虑<br>
+                    <strong>适用症状:</strong>肾虚、失眠、耳鸣、焦虑<br>
+                    <strong>能量属性:</strong>温润沉静、固肾安神
+                </div>
+                <div class="oil-caution">安全性高</div>
+            </div>
+
+            <!-- 天竺葵 -->
+            <div class="oil-card">
+                <div class="oil-name">天竺葵</div>
+                <div class="oil-latin">Pelargonium graveolens</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>平衡激素、调节体温、促进循环<br>
+                    <strong>适用症状:</strong>经期不适、手心热脚心凉、情绪波动<br>
+                    <strong>能量属性:</strong>平衡调和、温凉适中
+                </div>
+                <div class="oil-caution">安全性高,孕期慎用</div>
+            </div>
+
+            <!-- 甜橙 -->
+            <div class="oil-card">
+                <div class="oil-name">甜橙</div>
+                <div class="oil-latin">Citrus sinensis</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>理气温中、提升情绪、促进消化<br>
+                    <strong>适用症状:</strong>脾胃虚弱、情绪低落、食欲不振<br>
+                    <strong>能量属性:</strong>温暖愉悦、理气健脾
+                </div>
+                <div class="oil-caution">轻微光敏性</div>
+            </div>
+
+            <!-- 欧薄荷 -->
+            <div class="oil-card">
+                <div class="oil-name">欧薄荷</div>
+                <div class="oil-latin">Mentha piperita</div>
+                <div class="oil-properties">
+                    <strong>主要功效:</strong>清凉提神、止痛、促进消化<br>
+                    <strong>适用症状:</strong>头痛、疲劳、消化不良<br>
+                    <strong>能量属性:</strong>清凉振奋、醒脑开窍
+                </div>
+                <div class="oil-caution">孕期哺乳期慎用,婴幼儿禁用,可能影响睡眠</div>
+            </div>
+        </div>
+
+        <h3>基础油介绍</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>基础油</th>
+                    <th>特性</th>
+                    <th>适用场景</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>荷荷巴油</strong></td>
+                    <td>亲肤性佳、吸收快、稳定性高、不易氧化</td>
+                    <td>所有配方的首选基础油,特别适合滚珠和身体乳</td>
+                </tr>
+                <tr>
+                    <td><strong>葡萄籽油</strong></td>
+                    <td>质地轻盈、不油腻、富含维生素E</td>
+                    <td>适合大面积使用,可用于按摩</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 第三部分:安全使用须知 -->
+        <h2 id="safety">三、安全使用须知</h2>
+
+        <div class="warning-box">
+            <h3>重要安全警示</h3>
+            <div class="safety-item">
+                <span class="safety-label">绝对禁用精油:</span>
+                孕期禁用:中国肉桂、艾草、雪松、甜茴香、迷迭香(整个孕期)
+            </div>
+            <div class="safety-item">
+                <span class="safety-label">慎用精油:</span>
+                野地薰衣草、玫瑰、天竺葵、乳香(孕早期慎用)
+            </div>
+            <div class="safety-item">
+                <span class="safety-label">特殊人群:</span>
+                高血压患者慎用迷迭香;癫痫患者禁用迷迭香和甜茴香
+            </div>
+            <div class="safety-item">
+                <span class="safety-label">光敏性:</span>
+                佛手柑使用后12小时内避免日晒;甜橙具轻微光敏性
+            </div>
+            <div class="safety-item">
+                <span class="safety-label">皮肤刺激:</span>
+                中国肉桂、姜、欧薄荷刺激性较强,敏感肌需低浓度测试
+            </div>
+        </div>
+
+        <h3>每日安全用量标准</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>使用方式</th>
+                    <th>安全浓度</th>
+                    <th>每日最大用量</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>身体按摩油</td>
+                    <td>1-3%</td>
+                    <td>总精油量≤0.6ml</td>
+                    <td>日常使用1-2%,特殊调理期可达3%</td>
+                </tr>
+                <tr>
+                    <td>护手霜</td>
+                    <td>1-2%</td>
+                    <td>总精油量≤0.1ml</td>
+                    <td>工作时段使用,可多次涂抹</td>
+                </tr>
+                <tr>
+                    <td>泡脚/泡澡</td>
+                    <td>水中稀释</td>
+                    <td>6-8滴</td>
+                    <td>需用基础油乳化,实际皮肤吸收约30%</td>
+                </tr>
+                <tr>
+                    <td>扩香</td>
+                    <td>空气扩散</td>
+                    <td>7-10滴/次</td>
+                    <td>不计入皮肤接触量,每次15-20分钟</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note">
+            <strong>每日总量控制:</strong>成人每日精油皮肤接触总量建议≤0.5-0.6ml。本方案通过隔日轮换、分时段使用等方式,将日均精油量控制在0.4-0.6ml之间,符合安全标准。
+        </div>
+
+        <h3>使用注意事项</h3>
+        <div style="padding: 20px; background-color: #fafafa; border-radius: 4px;">
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li><strong>皮肤测试:</strong>首次使用新配方前,在手腕内侧涂抹少量,观察24小时无不适再正常使用</li>
+                <li><strong>避开部位:</strong>避免接触眼睛、粘膜、破损皮肤</li>
+                <li><strong>储存方式:</strong>避光、室温(15-25℃)保存,开封后3个月内用完</li>
+                <li><strong>容器选择:</strong>使用深色玻璃瓶,避免塑料容器(精油会溶解塑料)</li>
+                <li><strong>特殊时期:</strong>感冒发烧、皮肤炎症、过敏期间暂停使用</li>
+                <li><strong>经期调整:</strong>经期重大时可减少活血类精油的使用</li>
+                <li><strong>饮食配合:</strong>使用期间避免生冷、辛辣食物,保证充足饮水</li>
+                <li><strong>观察反应:</strong>连续使用6-8周评估效果,如有不适立即停用</li>
+            </ol>
+        </div>
+
+        <!-- 第四部分:配方实验器 -->
+        <div class="formula-builder" id="formula-builder">
+            <h2>四、配方实验器</h2>
+            <p style="margin-bottom: 30px; opacity: 0.95;">创建和实验您自己的精油配方，实时查看安全性和用量计算</p>
+            
+            <div class="builder-controls">
+                <div class="form-group">
+                    <label for="oilSelect">选择精油</label>
+                    <select id="oilSelect">
+                        <option value="">-- 选择精油 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="baseAmount">基础油/基底总量 (g/ml)</label>
+                    <input type="number" id="baseAmount" value="50" min="1" step="1">
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addOil()">添加精油</button>
+            
+            <div class="formula-ingredients" id="ingredientsList">
+                <div class="empty-state" id="emptyState">还没有添加精油，请从上方选择并添加</div>
+            </div>
+            
+            <div class="formula-summary" id="formulaSummary" style="display: none;">
+                <h3 style="margin-top: 0; margin-bottom: 15px;">配方摘要</h3>
+                <div class="summary-row">
+                    <span>总滴数:</span>
+                    <span id="totalDrops">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>总精油量 (ml):</span>
+                    <span id="totalMl">0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>配方浓度:</span>
+                    <span id="concentration">0%</span>
+                </div>
+                <div class="summary-row">
+                    <span>安全状态:</span>
+                    <span id="safetyStatus">-</span>
+                </div>
+            </div>
+            
+            <div id="safetyCheck" style="display: none;"></div>
+            
+            <div style="margin-top: 30px; display: flex; gap: 15px;">
+                <input type="text" id="formulaName" placeholder="配方名称 (可选)" style="flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 14px;">
+                <button class="btn btn-success" onclick="saveFormula()">保存配方</button>
+                <button class="btn btn-primary" onclick="clearFormula()">清空配方</button>
+            </div>
+        </div>
+
+        <!-- 已保存的配方 -->
+        <div class="saved-formulas" id="savedFormulasSection" style="display: none;">
+            <h2 style="margin-top: 50px;">已保存的配方</h2>
+            <div id="savedFormulasList"></div>
+        </div>
+
+        <!-- 第五部分:定制配方方案 -->
+        <h2 id="formulas">五、定制配方方案</h2>
+
+        <h3>日常配方(非经期使用)</h3>
+
+        <!-- 护手霜配方 -->
+        <div class="formula-box">
+            <div class="formula-title">配方A:理气清神护手霜</div>
+            <div class="formula-subtitle">工作时段使用 · 改善手心发热、缓解打嗝</div>
+            
+            <h4>配方组成(50g)</h4>
+            <ul class="ingredient-list">
+                <li><span>无香护手霜基底</span><span>50g</span></li>
+                <li><span>佛手柑精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>甜橙精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>欧薄荷精油</span><span>1滴(约0.05ml)</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>工作时段,每2-3小时涂抹一次(建议10:00/14:00/17:00)。取适量于手心,重点按压劳宫穴(手心中央)和合谷穴(虎口),充分吸收后深呼吸3次。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>佛手柑疏肝理气,缓解工作压力和打嗝;甜橙温中健脾,调理手心发热;薄荷清凉提神,改善疲劳。通过手部穴位刺激,实现全身调理。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>日均精油量:</strong>约0.06ml
+            </div>
+        </div>
+
+        <!-- 扩香配方 -->
+        <div class="formula-box">
+            <div class="formula-title">配方B:办公室提神扩香</div>
+            <div class="formula-subtitle">上午+下午各一次 · 提升专注力、改善情绪</div>
+            
+            <h4>配方组成(每次使用)</h4>
+            <ul class="ingredient-list">
+                <li><span>迷迭香精油</span><span>3滴</span></li>
+                <li><span>佛手柑精油</span><span>2滴</span></li>
+                <li><span>甜橙精油</span><span>2滴</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>上午10:00和下午15:00各扩香一次,每次15-20分钟。将精油滴入扩香仪或香薰机,保持办公桌面通风良好。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>迷迭香促进循环和专注;佛手柑疏肝理气,缓解工作压力;甜橙提升情绪。空气扩散方式不计入皮肤接触量,安全性高。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>说明:</strong>不计入每日精油皮肤接触量
+            </div>
+        </div>
+
+        <!-- 泡脚配方 -->
+        <div class="formula-box">
+            <div class="formula-title">配方C:温阳循环泡脚液</div>
+            <div class="formula-subtitle">每晚使用 · 改善脚心发凉、促进末梢循环</div>
+            
+            <h4>配方组成(每次使用)</h4>
+            <ul class="ingredient-list">
+                <li><span>热水(40-42℃)</span><span>适量至脚踝以上</span></li>
+                <li><span>姜精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>中国肉桂精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>艾草精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>荷荷巴油(乳化剂)</span><span>5ml</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>每晚18:30回家后进行。先将精油滴入荷荷巴油中混合,再倒入热水充分搅拌。泡脚20分钟,水温保持在40-42℃。泡脚后直接洗澡。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>姜和肉桂强力温阳散寒,艾草温经通络,三者协同改善末梢循环。通过足底反射区刺激,调理全身气血。水中稀释后实际皮肤吸收率约30%。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>实际吸收精油量:</strong>约0.09ml(水中稀释,实际吸收30%)
+            </div>
+        </div>
+
+        <!-- 身体乳1号 -->
+        <div class="formula-box">
+            <div class="formula-title">配方D:温阳循环身体乳(腿脚专用)</div>
+            <div class="formula-subtitle">每晚洗澡后使用 · 改善脚心发凉、促进下肢循环</div>
+            
+            <h4>配方组成(200g)</h4>
+            <ul class="ingredient-list">
+                <li><span>无香身体乳基底</span><span>200g</span></li>
+                <li><span>姜精油</span><span>6滴(约0.30ml)</span></li>
+                <li><span>迷迭香精油</span><span>5滴(约0.25ml)</span></li>
+                <li><span>中国肉桂精油</span><span>4滴(约0.20ml)</span></li>
+                <li><span>甜橙精油</span><span>3滴(约0.15ml)</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>19:40洗澡后,取适量涂抹于小腿、脚踝、脚底。重点按摩三阴交穴(小腿内侧)、涌泉穴(脚底中心),按摩3-5分钟至吸收。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>姜和肉桂温阳散寒,迷迭香促进末梢循环,甜橙理气温中。四者协同作用,从外部温养下肢,改善"上热下寒"体质。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>配方浓度:</strong>1.8%<br>
+                <strong>每次使用量:</strong>约30g<br>
+                <strong>每次精油量:</strong>约0.27ml
+            </div>
+        </div>
+
+        <!-- 身体乳2号 -->
+        <div class="formula-box">
+            <div class="formula-title">配方E:补肾安神身体乳(躯干专用)</div>
+            <div class="formula-subtitle">每晚洗澡后使用 · 补益脾肾、助眠安神</div>
+            
+            <h4>配方组成(200g)</h4>
+            <ul class="ingredient-list">
+                <li><span>无香身体乳基底</span><span>200g</span></li>
+                <li><span>檀香精油</span><span>7滴(约0.35ml)</span></li>
+                <li><span>乳香精油</span><span>5滴(约0.25ml)</span></li>
+                <li><span>野地薰衣草精油</span><span>4滴(约0.20ml)</span></li>
+                <li><span>雪松精油</span><span>4滴(约0.20ml)</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>19:45洗澡后,取适量温热双手后涂抹于腰部(肾区)、下腹部、颈后、胸口。顺时针按摩下腹5-8分钟,重点温养肾区和颈后,配合深呼吸。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>檀香温肾安神,乳香活血通络深层放松,薰衣草镇静助眠,雪松强壮补益。四者协同,既补益肾阳根本,又安神助眠。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>配方浓度:</strong>2%<br>
+                <strong>每次使用量:</strong>约30g<br>
+                <strong>每次精油量:</strong>约0.30ml
+            </div>
+        </div>
+
+        <!-- 轮换使用说明 -->
+        <div class="note">
+            <strong>重要:身体乳轮换使用方案</strong><br>
+            为控制每日精油总量在安全范围内,配方D和配方E需隔日轮换使用:<br>
+            • <strong>A日:</strong>泡脚 + 身体乳D(腿脚专用) = 精油量0.36ml<br>
+            • <strong>B日:</strong>身体乳D(腿脚专用) + 身体乳E(躯干专用) = 精油量0.57ml<br>
+            • 护手霜和扩香每日正常使用<br>
+            • 周平均精油量:约0.46ml ✓ 安全范围
+        </div>
+
+        <h3>经期专用配方</h3>
+
+        <!-- 经前配方 -->
+        <div class="formula-box">
+            <div class="formula-title">配方F:经前调理泡脚液</div>
+            <div class="formula-subtitle">经期前7-3天使用 · 暖宫调经、预防痛经</div>
+            
+            <h4>配方组成(每次使用)</h4>
+            <ul class="ingredient-list">
+                <li><span>热水(40-42℃)</span><span>适量至脚踝以上</span></li>
+                <li><span>姜精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>艾草精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>玫瑰精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>荷荷巴油(乳化剂)</span><span>5ml</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>经期前7-3天,每晚19:00泡脚20分钟。操作同配方C。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>姜和艾草温经散寒暖宫,玫瑰活血调经。提前调理可有效预防痛经,减轻经期不适。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>实际吸收精油量:</strong>约0.12ml
+            </div>
+        </div>
+
+        <!-- 经前身体乳 -->
+        <div class="formula-box">
+            <div class="formula-title">配方G:经前调理身体乳</div>
+            <div class="formula-subtitle">经期前7-3天使用 · 温经暖宫、活血化瘀</div>
+            
+            <h4>配方组成(150g)</h4>
+            <ul class="ingredient-list">
+                <li><span>无香身体乳基底</span><span>150g</span></li>
+                <li><span>玫瑰精油</span><span>6滴(约0.30ml)</span></li>
+                <li><span>天竺葵精油</span><span>4滴(约0.20ml)</span></li>
+                <li><span>艾草精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>乳香精油</span><span>3滴(约0.15ml)</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>经期前7-3天,洗澡后重点涂抹下腹部、腰骶部、大腿内侧。温热双手后顺时针按摩下腹部10分钟。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>玫瑰活血化瘀调经,天竺葵平衡激素,艾草温经暖宫,乳香通络止痛。提前调理可疏通经络,为经期做好准备。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>配方浓度:</strong>2.1%<br>
+                <strong>每次使用量:</strong>约30g<br>
+                <strong>每次精油量:</strong>约0.32ml<br>
+                <strong>使用调整:</strong>此期间停用配方E(补肾安神身体乳),配方D(温阳循环身体乳)继续使用
+            </div>
+        </div>
+
+        <!-- 经期中配方 -->
+        <div class="formula-box">
+            <div class="formula-title">配方H:经期温经泡澡液</div>
+            <div class="formula-subtitle">经期1-3天使用 · 温经止痛、缓解痉挛</div>
+            
+            <h4>配方组成(每次使用)</h4>
+            <ul class="ingredient-list">
+                <li><span>温水浴缸(38-40℃)</span><span>适量</span></li>
+                <li><span>玫瑰精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>艾草精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>姜精油</span><span>2滴(约0.10ml)</span></li>
+                <li><span>牛奶(乳化剂)</span><span>100ml</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>经期1-3天,每晚19:00泡澡15-20分钟,代替泡脚。先将精油滴入牛奶中混合,再倒入温水搅拌均匀。水温不宜过高,保持在38-40℃。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>全身浸泡比泡脚面积更大,水量更多精油浓度降低更安全。温水配合精油放松子宫平滑肌,缓解痉挛性疼痛。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid var(--accent-color); border-radius: 2px;">
+                <strong>注意:</strong>浴缸水量大,精油浓度极低,实际皮肤吸收率低于20%
+            </div>
+        </div>
+
+        <!-- 经期止痛身体乳 -->
+        <div class="formula-box">
+            <div class="formula-title">配方I:经期止痛身体乳</div>
+            <div class="formula-subtitle">经期1-3天使用 · 温经止痛、缓解痛经</div>
+            
+            <h4>配方组成(100g)</h4>
+            <ul class="ingredient-list">
+                <li><span>无香身体乳基底</span><span>100g</span></li>
+                <li><span>玫瑰精油</span><span>5滴(约0.25ml)</span></li>
+                <li><span>艾草精油</span><span>4滴(约0.20ml)</span></li>
+                <li><span>姜精油</span><span>3滴(约0.15ml)</span></li>
+                <li><span>甜茴香精油</span><span>2滴(约0.10ml)</span></li>
+            </ul>
+            
+            <div class="usage-box">
+                <strong>使用方法:</strong>经期1-3天,泡澡后<strong>仅</strong>涂抹于下腹部和腰部。温热双手后,先顺时针轻柔按摩下腹部5分钟,再横向按摩腰骶部3分钟。
+            </div>
+            
+            <div class="usage-box">
+                <strong>作用原理:</strong>玫瑰活血止痛,艾草和姜强力温经散寒,甜茴香解痉止痛。浓度稍高但使用面积小,针对性强。
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-left: 3px solid #666; border-radius: 2px;">
+                <strong>配方浓度:</strong>2.8%<br>
+                <strong>每次使用量:</strong>约20g(仅腰腹部)<br>
+                <strong>每次精油量:</strong>约0.28ml<br>
+                <strong>使用调整:</strong>此期间停用配方D(温阳循环身体乳),护手霜减半使用
+            </div>
+        </div>
+
+        <!-- 经期后配方 -->
+        <div class="note">
+            <strong>经期后4-7天(恢复调养期)</strong><br>
+            • 泡脚配方:玫瑰2滴 + 乳香2滴 + 姜2滴 + 荷荷巴油5ml<br>
+            • 逐步恢复日常方案:配方D和配方E轮换使用<br>
+            • 可适当增加配方E(补肾安神身体乳)的使用频率,强化经后补肾
+        </div>
+
+        <h3>每日精油用量汇总</h3>
+        <div class="dosage-summary">
+            <div class="dosage-card">
+                <div class="dosage-label">非经期 A日(轻度)</div>
+                <div class="dosage-value">0.45ml</div>
+                <div style="font-size: 12px; color: #666;">泡脚 + 身体乳D + 护手霜</div>
+            </div>
+            <div class="dosage-card">
+                <div class="dosage-label">非经期 B日(中度)</div>
+                <div class="dosage-value">0.63ml</div>
+                <div style="font-size: 12px; color: #666;">身体乳D + 身体乳E + 护手霜</div>
+            </div>
+            <div class="dosage-card">
+                <div class="dosage-label">经期前(7-3天)</div>
+                <div class="dosage-value">0.50ml</div>
+                <div style="font-size: 12px; color: #666;">泡脚F + 身体乳G + 身体乳D + 护手霜</div>
+            </div>
+            <div class="dosage-card">
+                <div class="dosage-label">经期中(1-3天)</div>
+                <div class="dosage-value">0.34ml</div>
+                <div style="font-size: 12px; color: #666;">泡澡H + 身体乳I + 护手霜减半</div>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>安全性评估:</strong>所有配方的每日精油总量均控制在0.35-0.65ml之间,符合成人安全标准(≤0.6ml)。经期中用量最低,最为安全。
+        </div>
+
+        <!-- 第六部分:每日使用时间表 -->
+        <h2 id="schedule">六、每日使用时间表</h2>
+
+        <h3>工作日作息(07:00-18:00在办公室)</h3>
+
+        <h4>非经期日常时间表</h4>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-time">06:30-07:00</div>
+                <div class="timeline-content">起床洗漱,准备出门,无需使用精油</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">10:00</div>
+                <div class="timeline-content"><strong>【配方A】</strong>涂抹理气清神护手霜,按压手心穴位<br><strong>【配方B】</strong>办公室扩香(迷迭香+佛手柑+甜橙)15分钟</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">14:00</div>
+                <div class="timeline-content"><strong>【配方A】</strong>涂抹理气清神护手霜</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">15:00</div>
+                <div class="timeline-content"><strong>【配方B】</strong>办公室扩香15分钟</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">17:00</div>
+                <div class="timeline-content"><strong>【配方A】</strong>涂抹理气清神护手霜</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">18:30</div>
+                <div class="timeline-content">到家,准备泡脚</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:00-19:20</div>
+                <div class="timeline-content"><strong>【配方C】</strong>温阳循环泡脚20分钟(姜+肉桂+艾草)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:20-19:40</div>
+                <div class="timeline-content">洗澡</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:40-19:50</div>
+                <div class="timeline-content">
+                    <strong>A日方案:</strong><br>
+                    <strong>【配方D】</strong>温阳循环身体乳(涂抹腿脚,按摩3-5分钟)<br>
+                    今日精油总量:0.45ml ✓<br><br>
+                    <strong>B日方案:</strong><br>
+                    <strong>【配方D】</strong>温阳循环身体乳(涂抹腿脚,3-5分钟)<br>
+                    <strong>【配方E】</strong>补肾安神身体乳(涂抹腰腹颈部,5-8分钟)<br>
+                    今日精油总量:0.63ml ✓
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">20:00-22:30</div>
+                <div class="timeline-content">自由活动时间</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">22:30-23:00</div>
+                <div class="timeline-content">准备入睡(配方E中的薰衣草和檀香持续发挥助眠作用)</div>
+            </div>
+        </div>
+
+        <h4>经期前时间表(经期前7-3天)</h4>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-time">工作时段</div>
+                <div class="timeline-content">护手霜和扩香照常使用</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:00-19:20</div>
+                <div class="timeline-content"><strong>【配方F】</strong>经前调理泡脚(姜+艾草+玫瑰)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:40-19:50</div>
+                <div class="timeline-content">
+                    <strong>【配方D】</strong>温阳循环身体乳(腿脚)<br>
+                    <strong>【配方G】</strong>经前调理身体乳(重点下腹、腰骶、大腿内侧)<br>
+                    <strong>停用:</strong>配方E(补肾安神身体乳)<br>
+                    今日精油总量:0.50ml ✓
+                </div>
+            </div>
+        </div>
+
+        <h4>经期中时间表(经期1-3天)</h4>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-time">工作时段</div>
+                <div class="timeline-content">护手霜<strong>减半使用</strong>(仅上午和下午各一次),扩香照常</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:00-19:20</div>
+                <div class="timeline-content"><strong>【配方H】</strong>经期温经泡澡(代替泡脚,15-20分钟)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:40-19:50</div>
+                <div class="timeline-content">
+                    <strong>【配方I】</strong>经期止痛身体乳(<strong>仅</strong>涂抹下腹部和腰部)<br>
+                    <strong>停用:</strong>配方D(温阳循环身体乳)<br>
+                    今日精油总量:0.34ml ✓ 最安全
+                </div>
+            </div>
+        </div>
+
+        <h4>经期后时间表(经期后4-7天)</h4>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-time">19:00-19:20</div>
+                <div class="timeline-content">活血泡脚(玫瑰2滴+乳香2滴+姜2滴)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">19:40-19:50</div>
+                <div class="timeline-content">
+                    逐步恢复日常方案<br>
+                    可适当增加配方E(补肾安神身体乳)使用频率
+                </div>
+            </div>
+        </div>
+
+        <h3>休息日时间表建议</h3>
+        <div class="note">
+            休息日作息灵活,但建议保持核心调理时段不变:<br>
+            • 晚间19:00-20:00的泡脚/泡澡和身体护理<br>
+            • 护手霜可随时使用<br>
+            • 扩香可根据需要灵活调整
+        </div>
+
+        <!-- 第七部分:配方制作指南 -->
+        <h2 id="making">七、配方制作指南</h2>
+
+        <h3>所需工具与材料</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>类别</th>
+                    <th>物品</th>
+                    <th>数量</th>
+                    <th>用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="4"><strong>容器</strong></td>
+                    <td>护手霜软管</td>
+                    <td>50g × 1个</td>
+                    <td>配方A</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃按压瓶</td>
+                    <td>200g × 2个</td>
+                    <td>配方D、配方E</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃罐</td>
+                    <td>150g × 1个</td>
+                    <td>配方G</td>
+                </tr>
+                <tr>
+                    <td>深色玻璃罐</td>
+                    <td>100g × 1个</td>
+                    <td>配方I</td>
+                </tr>
+                <tr>
+                    <td rowspan="5"><strong>工具</strong></td>
+                    <td>玻璃搅拌棒</td>
+                    <td>2-3根</td>
+                    <td>混合精油</td>
+                </tr>
+                <tr>
+                    <td>玻璃量杯</td>
+                    <td>50ml × 1个</td>
+                    <td>测量基础油</td>
+                </tr>
+                <tr>
+                    <td>小玻璃烧杯</td>
+                    <td>20ml × 2个</td>
+                    <td>调配精油</td>
+                </tr>
+                <tr>
+                    <td>精准滴管</td>
+                    <td>若干</td>
+                    <td>滴精油(可选)</td>
+                </tr>
+                <tr>
+                    <td>标签贴纸</td>
+                    <td>若干</td>
+                    <td>标注配方和日期</td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>基础材料</strong></td>
+                    <td>无香护手霜</td>
+                    <td>50g</td>
+                    <td>配方A基底</td>
+                </tr>
+                <tr>
+                    <td>无香身体乳</td>
+                    <td>650g</td>
+                    <td>各配方基底</td>
+                </tr>
+                <tr>
+                    <td>荷荷巴油/牛奶</td>
+                    <td>适量</td>
+                    <td>泡脚泡澡乳化剂</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>制作步骤详解</h3>
+
+        <h4>护手霜制作(配方A)</h4>
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 4px;">
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li>将50g无香护手霜挖出约10g放入小烧杯</li>
+                <li>依次滴入佛手柑3滴、甜橙2滴、欧薄荷1滴</li>
+                <li>用玻璃棒充分搅拌均匀(约2-3分钟)</li>
+                <li>将混合好的精油护手霜倒回原容器</li>
+                <li>加入剩余40g护手霜,继续搅拌至完全均匀</li>
+                <li>装入50g软管,标注"理气清神护手霜"和日期</li>
+                <li>常温避光保存,1个月内用完</li>
+            </ol>
+        </div>
+
+        <h4>身体乳制作(配方D、E、G、I)</h4>
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 4px;">
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li>将相应克数的无香身体乳倒入清洁的玻璃量杯</li>
+                <li>取出约30g身体乳放入小烧杯</li>
+                <li>按配方依次滴入各种精油</li>
+                <li>用玻璃棒充分搅拌3-5分钟,确保精油完全分散</li>
+                <li>将混合好的部分倒回大量杯中</li>
+                <li>继续搅拌2-3分钟,使精油在全部基底中均匀分布</li>
+                <li>装入相应容器,标注配方名称、浓度和日期</li>
+                <li>常温避光保存,2-3个月内用完</li>
+            </ol>
+        </div>
+
+        <h4>泡脚/泡澡配方使用(配方C、F、H)</h4>
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 4px;">
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li>先准备5ml荷荷巴油(泡脚)或100ml牛奶(泡澡)于小碗中</li>
+                <li>依次滴入配方所需精油</li>
+                <li>用玻璃棒搅拌均匀</li>
+                <li>倒入已准备好的热水中,充分搅拌使其分散</li>
+                <li>立即使用,不可预先混合储存</li>
+            </ol>
+        </div>
+
+        <h3>制作频率建议</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>配方</th>
+                    <th>制作份量</th>
+                    <th>使用周期</th>
+                    <th>制作频率</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>配方A 护手霜</td>
+                    <td>50g</td>
+                    <td>约1个月</td>
+                    <td>每月制作一次</td>
+                </tr>
+                <tr>
+                    <td>配方D 身体乳(腿脚)</td>
+                    <td>200g</td>
+                    <td>约2-3个月</td>
+                    <td>每2-3个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>配方E 身体乳(躯干)</td>
+                    <td>200g</td>
+                    <td>约2-3个月</td>
+                    <td>每2-3个月制作一次</td>
+                </tr>
+                <tr>
+                    <td>配方G 经前身体乳</td>
+                    <td>150g</td>
+                    <td>每周期5天</td>
+                    <td>每个经期前制作</td>
+                </tr>
+                <tr>
+                    <td>配方I 经期身体乳</td>
+                    <td>100g</td>
+                    <td>每周期3天</td>
+                    <td>每个经期开始时制作</td>
+                </tr>
+                <tr>
+                    <td>配方C、F、H 泡脚泡澡</td>
+                    <td>每次现调</td>
+                    <td>-</td>
+                    <td>使用时现场调配</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>保存与质量控制</h3>
+        <div style="padding: 20px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin-top: 0;">储存条件</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li>避光:使用深色玻璃容器或存放于暗处</li>
+                <li>温度:15-25℃室温保存,避免高温和冰箱</li>
+                <li>密封:使用后立即盖紧瓶盖,减少空气接触</li>
+                <li>干燥:避免水分进入,保持容器干燥</li>
+            </ul>
+
+            <h4>质量检查</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li>气味:如出现酸败或刺鼻异味,停止使用</li>
+                <li>质地:如出现分层、结块,停止使用</li>
+                <li>颜色:如明显变色(如变深、发黄),慎用</li>
+                <li>皮肤反应:如使用后出现红肿瘙痒,立即停用并清洗</li>
+            </ul>
+
+            <h4>使用期限</h4>
+            <ul style="padding-left: 20px; line-height: 2;">
+                <li>护手霜:制作后1个月内</li>
+                <li>身体乳(日常):制作后2-3个月内</li>
+                <li>身体乳(经期):制作后立即使用,剩余可保存至下个周期</li>
+                <li>泡脚泡澡:现调现用,不可储存</li>
+            </ul>
+        </div>
+
+        <h3>常见问题解答</h3>
+        <div style="margin: 30px 0;">
+            <h4>Q1: 为什么一定要用深色玻璃容器?</h4>
+            <p>A: 精油对光敏感,深色玻璃可以阻挡紫外线,防止精油氧化变质。塑料容器会被精油溶解,释放有害物质。</p>
+
+            <h4>Q2: 可以增加精油浓度来加强效果吗?</h4>
+            <p>A: 不建议。本方案已经过精确计算,在安全范围内达到最佳效果。擅自增加浓度可能导致皮肤刺激或其他不良反应。</p>
+
+            <h4>Q3: 配方中的精油可以随意替换吗?</h4>
+            <p>A: 不建议。每个配方都是根据你的具体症状和精油功效精心设计的,随意替换可能影响效果甚至带来风险。</p>
+
+            <h4>Q4: 为什么身体乳要轮换使用?</h4>
+            <p>A: 为了控制每日精油总量在安全范围内。两种身体乳同时使用会超标,轮换使用既保证效果又确保安全。</p>
+
+            <h4>Q5: 多久能看到效果?</h4>
+            <p>A: 循环和睡眠问题通常2-4周有改善,脾肾调理需6-8周,痛经改善需2-3个周期。坚持使用很重要。</p>
+
+            <h4>Q6: 使用期间需要避免什么?</h4>
+            <p>A: 避免生冷辛辣食物,保证充足饮水(每日1500-2000ml),规律作息,避免熬夜。</p>
+        </div>
+
+        <!-- 结尾 -->
+        <div class="footer">
+            <p>
+                本指南专为您的健康状况定制<br>
+                建议连续使用6-8周后评估效果<br>
+                如有任何不适,请立即停用并咨询专业人士<br><br>
+                <strong>制定日期:2025年11月</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 固定导航栏显示/隐藏
+        let lastScrollTop = 0;
+        const fixedNav = document.getElementById('fixedNav');
+        
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > 200) {
+                if (scrollTop < lastScrollTop) {
+                    fixedNav.classList.add('visible');
+                } else {
+                    fixedNav.classList.remove('visible');
+                }
+            } else {
+                fixedNav.classList.remove('visible');
+            }
+            
+            lastScrollTop = scrollTop;
+            
+            // 返回顶部按钮
+            const backToTop = document.getElementById('backToTop');
+            if (scrollTop > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // 返回顶部功能
+        document.getElementById('backToTop').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 移动端菜单切换
+        document.getElementById('menuToggle').addEventListener('click', function() {
+            document.getElementById('navMenu').classList.toggle('active');
+        });
+
+        // 点击导航链接后关闭移动端菜单
+        document.querySelectorAll('#navMenu a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('navMenu').classList.remove('active');
+                }
+            });
+        });
+
+        // 页面加载完成后添加淡入动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // 为主要内容块添加观察
+            document.querySelectorAll('.oil-card, .formula-box, .dosage-card').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                observer.observe(el);
+            });
+        });
+
+        // 精油数据库
+        const essentialOils = [
+            { name: '野地薰衣草', latin: 'Lavandula angustifolia', caution: '孕早期慎用', maxConcentration: 3 },
+            { name: '中国肉桂', latin: 'Cinnamomum cassia', caution: '刺激性强,需低浓度使用(≤1%),孕期禁用,敏感肌慎用', maxConcentration: 1 },
+            { name: '艾草', latin: 'Artemisia argyi', caution: '孕期禁用', maxConcentration: 2 },
+            { name: '依兰依兰', latin: 'Cananga odorata', caution: '浓度过高可能引起头痛', maxConcentration: 2 },
+            { name: '佛手柑', latin: 'Citrus bergamia', caution: '光敏性精油,使用后12小时内避免日晒', maxConcentration: 2 },
+            { name: '丝柏', latin: 'Cupressus sempervirens', caution: '孕期慎用', maxConcentration: 2 },
+            { name: '雪松', latin: 'Cedrus atlantica', caution: '孕期禁用', maxConcentration: 2 },
+            { name: '乳香', latin: 'Boswellia carterii', caution: '安全性高,孕早期慎用', maxConcentration: 3 },
+            { name: '甜茴香', latin: 'Foeniculum vulgare', caution: '孕期禁用,癫痫患者禁用,不宜长期高浓度使用', maxConcentration: 1 },
+            { name: '迷迭香', latin: 'Rosmarinus officinalis', caution: '孕期禁用,高血压患者慎用,癫痫患者禁用', maxConcentration: 2 },
+            { name: '广藿香', latin: 'Pogostemon cablin', caution: '安全性高', maxConcentration: 3 },
+            { name: '姜', latin: 'Zingiber officinale', caution: '刺激性较强,敏感肌需低浓度使用', maxConcentration: 2 },
+            { name: '玫瑰', latin: 'Rosa damascena', caution: '安全性高,孕期慎用', maxConcentration: 3 },
+            { name: '檀香', latin: 'Santalum album', caution: '安全性高', maxConcentration: 3 },
+            { name: '天竺葵', latin: 'Pelargonium graveolens', caution: '安全性高,孕期慎用', maxConcentration: 3 },
+            { name: '甜橙', latin: 'Citrus sinensis', caution: '轻微光敏性', maxConcentration: 3 },
+            { name: '欧薄荷', latin: 'Mentha piperita', caution: '孕期哺乳期慎用,婴幼儿禁用,可能影响睡眠', maxConcentration: 2 }
+        ];
+
+        // 当前配方
+        let currentFormula = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 填充精油选择下拉框
+            const oilSelect = document.getElementById('oilSelect');
+            essentialOils.forEach((oil, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${oil.name} (${oil.latin})`;
+                oilSelect.appendChild(option);
+            });
+
+            // 加载已保存的配方
+            loadSavedFormulas();
+        });
+
+        // 添加精油
+        function addOil() {
+            const oilSelect = document.getElementById('oilSelect');
+            const oilIndex = parseInt(oilSelect.value);
+            
+            if (isNaN(oilIndex)) {
+                alert('请先选择一种精油');
+                return;
+            }
+
+            const oil = essentialOils[oilIndex];
+            
+            // 检查是否已添加
+            if (currentFormula.find(item => item.index === oilIndex)) {
+                alert('该精油已在配方中，请调整滴数');
+                return;
+            }
+
+            currentFormula.push({
+                index: oilIndex,
+                name: oil.name,
+                latin: oil.latin,
+                caution: oil.caution,
+                maxConcentration: oil.maxConcentration,
+                drops: 1
+            });
+
+            updateFormulaDisplay();
+            oilSelect.value = '';
+        }
+
+        // 更新配方显示
+        function updateFormulaDisplay() {
+            const ingredientsList = document.getElementById('ingredientsList');
+            const emptyState = document.getElementById('emptyState');
+            const formulaSummary = document.getElementById('formulaSummary');
+
+            if (currentFormula.length === 0) {
+                emptyState.style.display = 'block';
+                formulaSummary.style.display = 'none';
+                document.getElementById('safetyCheck').style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            formulaSummary.style.display = 'block';
+
+            // 显示成分列表
+            ingredientsList.innerHTML = '';
+            currentFormula.forEach((item, idx) => {
+                const oil = essentialOils[item.index];
+                const ingredientDiv = document.createElement('div');
+                ingredientDiv.className = 'ingredient-item';
+                ingredientDiv.innerHTML = `
+                    <div class="ingredient-info">
+                        <div class="ingredient-name">${item.name}</div>
+                        <div class="ingredient-details">${item.latin} · ${oil.caution}</div>
+                    </div>
+                    <div class="ingredient-controls">
+                        <label style="font-size: 12px;">滴数:</label>
+                        <input type="number" class="drops-input" value="${item.drops}" min="1" max="20" 
+                               onchange="updateDrops(${idx}, this.value)" 
+                               oninput="updateDrops(${idx}, this.value)">
+                        <button class="btn btn-danger btn-small" onclick="removeOil(${idx})">删除</button>
+                    </div>
+                `;
+                ingredientsList.appendChild(ingredientDiv);
+            });
+
+            // 计算并显示摘要
+            calculateSummary();
+        }
+
+        // 更新滴数
+        function updateDrops(index, value) {
+            const drops = parseInt(value) || 1;
+            currentFormula[index].drops = Math.max(1, Math.min(20, drops));
+            calculateSummary();
+        }
+
+        // 删除精油
+        function removeOil(index) {
+            currentFormula.splice(index, 1);
+            updateFormulaDisplay();
+        }
+
+        // 计算摘要
+        function calculateSummary() {
+            const baseAmount = parseFloat(document.getElementById('baseAmount').value) || 50;
+            const totalDrops = currentFormula.reduce((sum, item) => sum + item.drops, 0);
+            const totalMl = totalDrops * 0.05; // 假设1滴 = 0.05ml
+            const concentration = (totalMl / baseAmount) * 100;
+
+            document.getElementById('totalDrops').textContent = totalDrops;
+            document.getElementById('totalMl').textContent = totalMl.toFixed(2);
+            document.getElementById('concentration').textContent = concentration.toFixed(2) + '%';
+
+            // 安全检查
+            checkSafety(totalDrops, totalMl, concentration);
+        }
+
+        // 安全检查
+        function checkSafety(totalDrops, totalMl, concentration) {
+            const safetyCheck = document.getElementById('safetyCheck');
+            const safetyStatus = document.getElementById('safetyStatus');
+            let status = 'safe';
+            let message = '配方安全';
+            let warnings = [];
+
+            // 检查总浓度
+            if (concentration > 3) {
+                status = 'danger';
+                message = '浓度过高！';
+                warnings.push(`总浓度 ${concentration.toFixed(2)}% 超过安全范围(≤3%)`);
+            } else if (concentration > 2) {
+                status = 'warning';
+                message = '浓度较高，请谨慎使用';
+                warnings.push(`总浓度 ${concentration.toFixed(2)}% 较高，建议控制在2%以下`);
+            }
+
+            // 检查每日用量
+            if (totalMl > 0.6) {
+                status = 'danger';
+                message = '每日用量超标！';
+                warnings.push(`总精油量 ${totalMl.toFixed(2)}ml 超过每日安全用量(≤0.6ml)`);
+            } else if (totalMl > 0.5) {
+                if (status !== 'danger') status = 'warning';
+                warnings.push(`总精油量 ${totalMl.toFixed(2)}ml 接近每日安全上限`);
+            }
+
+            // 检查单个精油浓度
+            const baseAmount = parseFloat(document.getElementById('baseAmount').value) || 50;
+            currentFormula.forEach(item => {
+                const oil = essentialOils[item.index];
+                const oilMl = item.drops * 0.05;
+                const oilConcentration = (oilMl / baseAmount) * 100;
+                
+                if (oilConcentration > oil.maxConcentration) {
+                    status = 'danger';
+                    warnings.push(`${item.name} 浓度 ${oilConcentration.toFixed(2)}% 超过其安全上限(${oil.maxConcentration}%)`);
+                }
+            });
+
+            // 显示结果
+            safetyStatus.textContent = message;
+            safetyStatus.style.color = status === 'safe' ? 'var(--success-color)' : 
+                                      status === 'warning' ? 'var(--warning-color)' : '#ef4444';
+
+            if (warnings.length > 0) {
+                safetyCheck.style.display = 'block';
+                safetyCheck.className = `safety-check ${status}`;
+                safetyCheck.innerHTML = `
+                    <strong>${message}</strong>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        ${warnings.map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                safetyCheck.style.display = 'block';
+                safetyCheck.className = 'safety-check safe';
+                safetyCheck.innerHTML = '<strong>✓ 配方安全，可以安全使用</strong>';
+            }
+        }
+
+        // 清空配方
+        function clearFormula() {
+            if (confirm('确定要清空当前配方吗？')) {
+                currentFormula = [];
+                document.getElementById('formulaName').value = '';
+                updateFormulaDisplay();
+            }
+        }
+
+        // 保存配方
+        function saveFormula() {
+            if (currentFormula.length === 0) {
+                alert('请先添加精油到配方中');
+                return;
+            }
+
+            const formulaName = document.getElementById('formulaName').value.trim() || 
+                               `配方 ${new Date().toLocaleDateString('zh-CN')}`;
+            
+            const baseAmount = parseFloat(document.getElementById('baseAmount').value) || 50;
+            const totalDrops = currentFormula.reduce((sum, item) => sum + item.drops, 0);
+            const totalMl = totalDrops * 0.05;
+            const concentration = (totalMl / baseAmount) * 100;
+
+            const formula = {
+                id: Date.now(),
+                name: formulaName,
+                date: new Date().toLocaleString('zh-CN'),
+                baseAmount: baseAmount,
+                ingredients: currentFormula.map(item => ({
+                    name: item.name,
+                    latin: item.latin,
+                    drops: item.drops,
+                    caution: item.caution
+                })),
+                totalDrops: totalDrops,
+                totalMl: totalMl,
+                concentration: concentration
+            };
+
+            // 保存到localStorage
+            let savedFormulas = JSON.parse(localStorage.getItem('savedFormulas') || '[]');
+            savedFormulas.push(formula);
+            localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
+
+            alert('配方已保存！');
+            loadSavedFormulas();
+            
+            // 清空当前配方
+            currentFormula = [];
+            document.getElementById('formulaName').value = '';
+            updateFormulaDisplay();
+        }
+
+        // 加载已保存的配方
+        function loadSavedFormulas() {
+            const savedFormulas = JSON.parse(localStorage.getItem('savedFormulas') || '[]');
+            const savedFormulasSection = document.getElementById('savedFormulasSection');
+            const savedFormulasList = document.getElementById('savedFormulasList');
+
+            if (savedFormulas.length === 0) {
+                savedFormulasSection.style.display = 'none';
+                return;
+            }
+
+            savedFormulasSection.style.display = 'block';
+            savedFormulasList.innerHTML = '';
+
+            savedFormulas.reverse().forEach(formula => {
+                const card = document.createElement('div');
+                card.className = 'saved-formula-card';
+                card.innerHTML = `
+                    <div class="formula-header">
+                        <div>
+                            <div class="formula-name">${formula.name}</div>
+                            <div class="formula-date">${formula.date}</div>
+                        </div>
+                        <div class="formula-actions">
+                            <button class="btn btn-primary btn-small" onclick="loadFormula(${formula.id})">加载</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteFormula(${formula.id})">删除</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                            <div><strong>基础量:</strong> ${formula.baseAmount}g/ml</div>
+                            <div><strong>总滴数:</strong> ${formula.totalDrops}滴</div>
+                            <div><strong>总精油量:</strong> ${formula.totalMl.toFixed(2)}ml</div>
+                            <div><strong>浓度:</strong> ${formula.concentration.toFixed(2)}%</div>
+                        </div>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px;">
+                            <strong>成分:</strong>
+                            <ul style="margin-top: 8px; padding-left: 20px;">
+                                ${formula.ingredients.map(ing => 
+                                    `<li>${ing.name}: ${ing.drops}滴 ${ing.caution ? `(${ing.caution})` : ''}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                savedFormulasList.appendChild(card);
+            });
+        }
+
+        // 加载配方
+        function loadFormula(id) {
+            const savedFormulas = JSON.parse(localStorage.getItem('savedFormulas') || '[]');
+            const formula = savedFormulas.find(f => f.id === id);
+            
+            if (!formula) {
+                alert('配方不存在');
+                return;
+            }
+
+            // 恢复配方
+            currentFormula = formula.ingredients.map(ing => {
+                const oilIndex = essentialOils.findIndex(o => o.name === ing.name);
+                return {
+                    index: oilIndex,
+                    name: ing.name,
+                    latin: ing.latin,
+                    caution: ing.caution,
+                    maxConcentration: essentialOils[oilIndex].maxConcentration,
+                    drops: ing.drops
+                };
+            });
+
+            document.getElementById('baseAmount').value = formula.baseAmount;
+            document.getElementById('formulaName').value = formula.name;
+            
+            updateFormulaDisplay();
+            
+            // 滚动到配方构建器
+            document.getElementById('formula-builder').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 删除配方
+        function deleteFormula(id) {
+            if (confirm('确定要删除这个配方吗？')) {
+                let savedFormulas = JSON.parse(localStorage.getItem('savedFormulas') || '[]');
+                savedFormulas = savedFormulas.filter(f => f.id !== id);
+                localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
+                loadSavedFormulas();
+            }
+        }
+
+        // 监听基础量变化
+        document.getElementById('baseAmount').addEventListener('input', function() {
+            if (currentFormula.length > 0) {
+                calculateSummary();
+            }
+        });
+    </script>
+</body>
+</html>

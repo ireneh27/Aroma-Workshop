@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="精油详情 - 个性化芳疗方案">
+    <title>精油详情 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .oil-detail-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-sm);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-color);
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(102, 126, 234, 0.1);
+            transition: var(--transition);
+            font-size: 13px;
+        }
+        .back-link:hover {
+            color: white;
+            background: var(--accent-gradient);
+            transform: translateX(-4px);
+        }
+        
+        .oil-detail-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.12);
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            align-items: start;
+            position: relative;
+            overflow: hidden;
+        }
+        @media (max-width: 768px) {
+            .oil-detail-header {
+                grid-template-columns: 1fr;
+                padding: 16px;
+                gap: 16px;
+            }
+        }
+        
+        .oil-header-info {
+            flex: 1;
+        }
+        
+        .oil-detail-title {
+            font-size: 26px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        
+        .oil-detail-latin {
+            font-size: 13px;
+            color: var(--secondary-color);
+            font-style: italic;
+            margin-bottom: 10px;
+            padding-left: 2px;
+        }
+        
+        .oil-types-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0;
+        }
+        
+        .oil-type-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: var(--transition);
+        }
+        .oil-type-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .oil-image-container {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transition: var(--transition);
+            position: relative;
+        }
+        .oil-image-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.05) 100%);
+            pointer-events: none;
+        }
+        .oil-image-container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .oil-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+            transition: var(--transition);
+        }
+        
+        .oil-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        @media (max-width: 480px) {
+            .oil-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .oil-info-item {
+            display: flex;
+            align-items: start;
+            gap: 8px;
+        }
+        
+        .oil-info-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            min-width: 75px;
+            font-size: 12px;
+        }
+        
+        .oil-info-value {
+            color: var(--secondary-color);
+            flex: 1;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .oil-detail-content {
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+        }
+        
+        .oil-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 768px) {
+            .oil-cards-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+        
+        .oil-info-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border: 1px solid rgba(102, 126, 234, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .oil-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--accent-gradient);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+        .oil-info-card:hover {
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .oil-info-card:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .oil-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .oil-card-title::before {
+            content: '';
+            width: 3px;
+            height: 15px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .oil-property-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .oil-property-list li {
+            padding: 2px 0;
+            padding-left: 16px;
+            position: relative;
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--secondary-color);
+            transition: var(--transition-fast);
+        }
+        .oil-property-list li:hover {
+            color: var(--primary-color);
+            padding-left: 20px;
+        }
+        .oil-property-list li::before {
+            content: '●';
+            position: absolute;
+            left: 4px;
+            color: var(--accent-color);
+            font-size: 7px;
+            top: 7px;
+        }
+        
+        .oil-card-content {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--secondary-color);
+            margin: 0;
+        }
+        
+        .info-box, .warning-box, .caution-box {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 12px;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f2ff 100%);
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 3px solid var(--warning-color);
+        }
+        
+        .caution-box {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 3px solid var(--error-color);
+        }
+        
+        .concentration-info {
+            display: inline-block;
+            background: var(--accent-gradient);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* 加载动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .oil-detail-header,
+        .oil-detail-content {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .oil-info-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .oil-info-card:nth-child(1) { animation-delay: 0.1s; }
+        .oil-info-card:nth-child(2) { animation-delay: 0.2s; }
+        .oil-info-card:nth-child(3) { animation-delay: 0.3s; }
+        .oil-info-card:nth-child(4) { animation-delay: 0.4s; }
+        .oil-info-card:nth-child(5) { animation-delay: 0.5s; }
+        .oil-info-card:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: 8px 15px; color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <main id="main-content" class="container">
+        <div class="oil-detail-container">
+            <a href="essential-oils.html" class="back-link">
+                ← 返回精油列表
+            </a>
+            
+            <div id="oilDetailContent">
+                <!-- 内容将由JavaScript动态生成 -->
+                <div style="text-align: center; padding: 50px 20px;">
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="oil-database.js"></script>
+    <script src="oil-detail.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="常用精油介绍">
+    <title>常用精油介绍 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .oil-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 30px 0 20px 0;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+        .oil-section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+        
+        /* 左侧大纲导航 */
+        .sidebar-nav {
+            position: fixed;
+            left: 0;
+            top: 60px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color-dark);
+            border-radius: 3px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+        
+        .sidebar-nav h3 {
+            padding: 0 20px 15px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .sidebar-nav a:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--accent-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .main-wrapper {
+            margin-left: 280px;
+            padding: 20px;
+            max-width: calc(100% - 280px);
+        }
+        
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            left: 20px;
+            top: 70px;
+            z-index: 101;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            font-size: 18px;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--accent-gradient-hover);
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar-nav {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar-nav.open {
+                transform: translateX(0);
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .oil-section-title {
+                font-size: 18px;
+                margin: 24px 0 16px 0;
+            }
+        }
+        
+        .oil-category-section {
+            margin-bottom: 60px;
+        }
+        
+        .oil-category-section:first-child {
+            margin-top: 0;
+        }
+        
+        @media print {
+            .sidebar-nav, .back-to-top, .fixed-nav, .sidebar-toggle {
+                display: none !important;
+            }
+            
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+    <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html" aria-current="page">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: var(--spacing-sm) var(--spacing-md); color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <!-- 侧边栏导航 -->
+    <nav class="sidebar-nav" id="sidebarNav" role="navigation" aria-label="页面大纲导航">
+        <h3>目录</h3>
+        <ul>
+            <li><a href="#all-oils">全部精油</a></li>
+            <li><a href="#type-floral">花香类</a></li>
+            <li><a href="#type-woody">木质类</a></li>
+            <li><a href="#type-citrus">柑橘类</a></li>
+            <li><a href="#type-herbal">草本类</a></li>
+            <li><a href="#type-resin">树脂类</a></li>
+            <li><a href="#type-spice">香料类</a></li>
+            <li><a href="#type-mint">薄荷类</a></li>
+        </ul>
+    </nav>
+
+    <!-- 侧边栏切换按钮（移动端） -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航菜单">☰</button>
+
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+        <main id="main-content" class="container">
+            <h1>常用精油介绍</h1>
+            <p class="subtitle" style="color: var(--secondary-color); margin-bottom: 30px;">
+                所有精油按类型分类展示，点击左侧导航栏筛选查看，点击卡片查看详细信息
+            </p>
+            
+            <div id="filterIndicator" style="display: none; background: var(--accent-gradient); color: white; padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 20px; font-size: 14px;">
+                <strong>当前筛选：</strong><span id="filterText">全部精油</span>
+            </div>
+
+            <div id="oilGrid">
+                <!-- 精油卡片将按分类由JavaScript动态生成 -->
+            </div>
+        <div class="footer">
+            <p>
+                本指南专为您的健康状况定制<br>
+                建议连续使用6-8周后评估效果<br>
+                如有任何不适,请立即停用并咨询专业人士<br><br>
+                <strong>制定日期:2025年11月</strong>
+            </p>
+        </div>
+        </main>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+    <script src="oil-database.js"></script>
+    <script src="essential-oils-page.js"></script>
+    <script>
+        // 侧边栏导航功能已在 essential-oils-page.js 中初始化
+        // 如果页面加载时导航已存在，也初始化一次（作为备用）
+        document.addEventListener('DOMContentLoaded', function() {
+            // 等待精油section渲染完成
+            window.addEventListener('oilSectionsRendered', function() {
+                if (typeof initSidebarNavigation === 'function') {
+                    initSidebarNavigation();
+                }
+            });
+            
+            // 如果已经渲染完成，直接初始化
+            setTimeout(function() {
+                if (document.querySelector('.oil-category-section[id]')) {
+                    if (typeof initSidebarNavigation === 'function') {
+                        initSidebarNavigation();
+                    }
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

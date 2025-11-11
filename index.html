@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="个性化芳疗方案使用指南 - 定制化精油配方与安全使用手册">
+    <meta name="keywords" content="芳疗,精油,配方,健康,个性化">
+    <meta name="author" content="个性化芳疗方案">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="个性化芳疗方案使用指南">
+    <meta property="og:description" content="定制化精油配方与安全使用手册">
+    
+    <title>个性化芳疗方案 - 开启您的自然健康之旅</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Hero Section - 主视觉区域 */
+        .hero {
+            text-align: center;
+            padding: 100px 20px 80px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 300;
+            margin-bottom: 25px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            line-height: 1.2;
+        }
+        
+        .hero .subtitle {
+            font-size: 22px;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+        
+        .hero .tagline {
+            font-size: 16px;
+            color: var(--secondary-color);
+            margin-bottom: 50px;
+            opacity: 0.8;
+        }
+        
+        /* CTA Button - 主要行动按钮 */
+        .cta-section {
+            margin: 50px 0;
+            text-align: center;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 20px 50px;
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 50px;
+            text-decoration: none;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .cta-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+        }
+        
+        .cta-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .cta-button span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-hint {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--secondary-color);
+            opacity: 0.7;
+        }
+        
+        /* 功能卡片网格 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-xl);
+            margin: var(--spacing-3xl) 0;
+        }
+        
+        .feature-card {
+            background: var(--card-bg);
+            padding: var(--spacing-xl);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-gradient);
+            transform: scaleY(0);
+            transform-origin: top;
+            transition: var(--transition);
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .feature-card h3 {
+            margin: 0 0 var(--spacing-sm);
+            color: var(--primary-color);
+            font-size: var(--text-lg);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        
+        .feature-card p {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: var(--text-sm);
+            line-height: 1.7;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 60px 20px 50px;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero .subtitle {
+                font-size: 18px;
+            }
+            
+            .cta-button {
+                padding: 18px 40px;
+                font-size: 18px;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+            
+            .feature-card {
+                padding: var(--spacing-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html" aria-current="page">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: var(--spacing-sm) var(--spacing-md); color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <main id="main-content" class="container">
+        <!-- Hero Section - 主视觉区域 -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>个性化芳疗方案</h1>
+                <p class="subtitle">自然的力量，个性化的关怀</p>
+                <p class="tagline">基于您的健康状况，为您量身定制专属精油配方</p>
+            </div>
+        </div>
+
+        <!-- CTA Section - 主要行动按钮 -->
+        <div class="cta-section">
+            <a href="health-profile.html" class="cta-button">
+                <span>开始健康问卷，获取专属配方</span>
+            </a>
+            <p class="cta-hint">只需几分钟，了解您的健康状况，获得个性化建议</p>
+        </div>
+
+        <!-- 功能导航卡片 -->
+        <div class="card-grid">
+            <a href="essential-oils.html" class="feature-card">
+                <h3>精油库介绍</h3>
+                <p>了解17种精油的特性、功效与使用方法，为配方选择提供专业参考</p>
+            </a>
+            <a href="safety.html" class="feature-card">
+                <h3>安全使用须知</h3>
+                <p>掌握精油使用的安全规范与注意事项，确保安全有效的使用体验</p>
+            </a>
+            <a href="formula-builder.html" class="feature-card">
+                <h3>配方实验器</h3>
+                <p>自由组合不同精油，实时计算浓度与安全性，探索个性化配方</p>
+            </a>
+            <a href="formulas.html" class="feature-card">
+                <h3>您的定制配方</h3>
+                <p>基于健康问卷生成专属配方，提供详细的使用指导与建议</p>
+            </a>
+            <a href="formula-library.html" class="feature-card">
+                <h3>经典配方库</h3>
+                <p>浏览精选配方方案，按需求快速查找适合的配方组合</p>
+            </a>
+            <a href="recipe-database.html" class="feature-card">
+                <h3>您的私人配方库</h3>
+                <p>管理个人配方收藏，支持导入导出，建立专属配方档案</p>
+            </a>
+            <a href="making.html" class="feature-card">
+                <h3>制作指南</h3>
+                <p>学习配方制作流程，掌握工具使用与保存方法</p>
+            </a>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="微信支付 - 购买AI查询次数">
+    <title>微信支付 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .payment-container {
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-hover);
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .payment-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        .payment-item {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .payment-item-label {
+            font-size: 14px;
+            color: var(--secondary-color);
+            margin-bottom: 8px;
+        }
+        .payment-item-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .payment-item-value.price {
+            color: var(--accent-color);
+            font-size: 32px;
+        }
+        .wechat-pay-button {
+            width: 100%;
+            padding: 18px;
+            background: #07c160;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+        .wechat-pay-button:hover {
+            background: #06ad56;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+        }
+        .wechat-pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .payment-qr {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+        }
+        .payment-status {
+            text-align: center;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .payment-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .payment-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .payment-status.processing {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="health-profile.html">健康状况</a>
+                <a href="formulas.html">定制配方</a>
+                <a href="login.html">登录</a>
+            </nav>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <main id="main-content" class="container">
+        <div class="payment-container">
+            <a href="login.html" class="back-link">← 返回</a>
+            
+            <div class="payment-header">
+                <h1>微信支付</h1>
+                <p style="color: var(--secondary-color);">安全便捷的支付方式</p>
+            </div>
+
+            <!-- 支付信息 -->
+            <div id="paymentInfo">
+                <div class="payment-item">
+                    <div class="payment-item-label">商品名称</div>
+                    <div class="payment-item-value" id="productName">AI查询次数</div>
+                </div>
+                <div class="payment-item">
+                    <div class="payment-item-label">购买数量</div>
+                    <div class="payment-item-value" id="productAmount">10次</div>
+                </div>
+                <div class="payment-item">
+                    <div class="payment-item-label">支付金额</div>
+                    <div class="payment-item-value price" id="productPrice">¥5.00</div>
+                </div>
+            </div>
+
+            <!-- 支付二维码（PC端显示） -->
+            <div id="qrPayment" class="payment-qr" style="display: none;">
+                <p style="margin-bottom: 15px; font-weight: 600;">请使用微信扫码支付</p>
+                <div class="qr-code" id="qrCode">📱</div>
+                <p style="font-size: 14px; color: var(--secondary-color);">打开微信扫一扫，扫描上方二维码完成支付</p>
+            </div>
+
+            <!-- 支付状态 -->
+            <div id="paymentStatus" style="display: none;"></div>
+
+            <!-- 支付按钮 -->
+            <button id="wechatPayBtn" class="wechat-pay-button" onclick="initiateWeChatPay()">
+                <span>确认支付 ¥5.00</span>
+            </button>
+
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: var(--secondary-color); line-height: 1.8;">
+                <strong>支付说明：</strong><br>
+                • 支付成功后，AI查询次数将立即到账<br>
+                • 支持微信支付，安全便捷<br>
+                • 如有问题，请联系客服
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script src="payment.js"></script>
+</body>
+</html>
+

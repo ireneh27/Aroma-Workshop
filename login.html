@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="用户登录注册 - 个性化芳疗方案">
+    <title>登录/注册 - 个性化芳疗方案</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .auth-container {
+            max-width: 450px;
+            margin: var(--spacing-3xl) auto;
+            padding: var(--spacing-2xl);
+            background: var(--card-bg);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-hover);
+        }
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .auth-tab {
+            flex: 1;
+            padding: var(--spacing-md);
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: var(--text-base);
+            font-weight: 600;
+            color: var(--secondary-color);
+            transition: var(--transition);
+        }
+        .auth-tab.active {
+            color: var(--accent-color);
+            border-bottom: 3px solid var(--accent-color);
+            margin-bottom: -2px;
+        }
+        .auth-tab:hover {
+            color: var(--accent-color);
+        }
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        .auth-form .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        .auth-form .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: var(--text-sm);
+        }
+        .auth-form .form-group input {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            transition: var(--transition);
+            background: var(--card-bg);
+            color: var(--primary-color);
+        }
+        .auth-form .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .auth-benefits {
+            background: var(--accent-gradient);
+            color: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        .auth-benefits h3 {
+            margin-top: 0;
+            color: white;
+        }
+        .auth-benefits ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .auth-benefits li {
+            margin: 8px 0;
+        }
+        .auth-container .message {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            display: none;
+        }
+        .auth-container .message.show {
+            display: flex;
+        }
+        .user-info {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        .inquiry-counter {
+            font-size: var(--text-2xl);
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: var(--spacing-sm) 0;
+        }
+    </style>
+</head>
+    <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 固定导航栏 -->
+    <div class="fixed-nav" id="fixedNav" role="navigation" aria-label="主导航">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" aria-label="返回首页">个性化芳疗方案</a></div>
+            <button class="menu-toggle" id="menuToggle" aria-label="切换菜单" aria-expanded="false" aria-controls="navMenu">☰</button>
+            <nav id="navMenu" role="navigation">
+                <a href="index.html">首页</a>
+                <a href="essential-oils.html">常用精油介绍</a>
+                <a href="formula-library.html">经典配方库</a>
+                <a href="formula-builder.html">配方实验</a>
+                <a href="making.html">制作指南</a>
+                <a href="health-profile.html">您的信息档案</a>
+                <a href="formulas.html">您的定制配方</a>
+                <a href="recipe-database.html">您的私人配方库</a>
+                <a href="login.html" aria-current="page" id="navLoginLink">登录</a>
+                <span id="navUserInfo" style="display: none; padding: 8px 15px; color: var(--accent-color); font-weight: 600;"></span>
+            </nav>
+        </div>
+    </div>
+
+    <main id="main-content" class="container">
+        <div class="auth-container">
+            <!-- 如果已登录，显示用户信息 -->
+            <div id="loggedInView" style="display: none;">
+                <div class="user-info">
+                    <h2>欢迎回来！</h2>
+                    <p id="userName"></p>
+                    <div class="inquiry-counter">
+                        <span id="remainingInquiries">0</span> / <span id="totalInquiries">3</span>
+                    </div>
+                    <p style="color: var(--secondary-color); font-size: 14px;">剩余AI查询次数</p>
+                    
+                    <!-- 购买按钮 -->
+                    <button class="btn btn-primary mt-md" onclick="handlePurchaseAI()">
+                        购买10次AI查询（¥5）
+                    </button>
+                    
+                    <button class="btn btn-outline mt-md" onclick="handleLogout()">登出</button>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="formulas.html" class="btn btn-primary">查看配方推荐</a>
+                </div>
+            </div>
+
+            <!-- 登录/注册表单 -->
+            <div id="authView">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchTab('login')">登录</button>
+                    <button class="auth-tab" onclick="switchTab('register')">注册</button>
+                </div>
+
+                <div class="auth-benefits">
+                    <h3>注册即享福利</h3>
+                    <ul>
+                        <li>3次免费AI智能配方推荐</li>
+                        <li>个性化健康分析</li>
+                        <li>保存您的健康档案</li>
+                        <li>获取最新配方更新</li>
+                    </ul>
+                </div>
+
+                <div id="message" class="message"></div>
+
+                <!-- 登录表单 -->
+                <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">邮箱</label>
+                        <input type="email" id="loginEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">密码</label>
+                        <input type="password" id="loginPassword" required placeholder="请输入密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">登录</button>
+                    
+                    <!-- 微信登录按钮 -->
+                    <div class="mt-lg text-center">
+                        <div style="position: relative; margin: var(--spacing-lg) 0;">
+                            <div style="position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--border-color);"></div>
+                            <span style="position: relative; background: var(--card-bg); padding: 0 var(--spacing-md); color: var(--secondary-color); font-size: var(--text-sm);">或</span>
+                        </div>
+                        <button type="button" onclick="handleWeChatLogin()" class="btn" style="width: 100%; background: #07c160; color: white; border: none; padding: var(--spacing-md); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm);">
+                            <span>微信登录</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 注册表单 -->
+                <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="registerName">姓名（可选）</label>
+                        <input type="text" id="registerName" placeholder="您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">邮箱</label>
+                        <input type="email" id="registerEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">密码</label>
+                        <input type="password" id="registerPassword" required placeholder="至少6位字符" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPasswordConfirm">确认密码</label>
+                        <input type="password" id="registerPasswordConfirm" required placeholder="再次输入密码" minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">注册</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // 切换登录/注册标签
+        function switchTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:first-child').classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:last-child').classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
+            
+            // 清除消息
+            hideMessage();
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+
+        function hideMessage() {
+            const messageEl = document.getElementById('message');
+            messageEl.classList.remove('show');
+        }
+
+        // 处理登录
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const result = window.authSystem.loginUser(email, password);
+            
+            if (result.success) {
+                showMessage(result.message, 'success');
+                setTimeout(() => {
+                    updateUI();
+                    // 可选：跳转到配方页面
+                    // window.location.href = 'formulas.html';
+                }, 1000);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        }
+
+        // 处理注册
+        function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            
+            if (password !== passwordConfirm) {
+                showMessage('两次输入的密码不一致', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('密码至少需要6位字符', 'error');
+                return;
+            }
+            
+            const result = window.authSystem.registerUser(email, password, name);
+            
+            if (result.success) {
+                showMessage(result.message, 'success');
+                setTimeout(() => {
+                    updateUI();
+                }, 1000);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        }
+
+        // 处理登出
+        function handleLogout() {
+            window.authSystem.logoutUser();
+            updateUI();
+            showMessage('已成功登出', 'success');
+        }
+
+        // 处理微信登录
+        async function handleWeChatLogin() {
+            try {
+                const result = await window.authSystem.loginWithWeChat();
+                
+                // 如果是开发模式（返回Promise结果），直接处理
+                if (result && result.success) {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => {
+                        updateUI();
+                    }, 1000);
+                }
+                // 如果是生产模式，会跳转到微信授权页面，不需要处理
+            } catch (error) {
+                showMessage('微信登录失败：' + error.message, 'error');
+            }
+        }
+        
+        // 处理购买AI查询
+        function handlePurchaseAI() {
+            window.authSystem.purchaseAIInquiries();
+        }
+        
+        // 更新UI显示
+        function updateUI() {
+            const user = window.authSystem.getCurrentUser();
+            
+            if (user) {
+                // 显示已登录视图
+                document.getElementById('authView').style.display = 'none';
+                document.getElementById('loggedInView').style.display = 'block';
+                
+                const userInfo = window.authSystem.getUserInfo();
+                document.getElementById('userName').textContent = userInfo.name || userInfo.email;
+                document.getElementById('remainingInquiries').textContent = userInfo.remainingInquiries;
+                document.getElementById('totalInquiries').textContent = userInfo.aiInquiriesLimit || window.authSystem.AI_INQUIRY_LIMIT;
+            } else {
+                // 显示登录/注册表单
+                document.getElementById('authView').style.display = 'block';
+                document.getElementById('loggedInView').style.display = 'none';
+            }
+        }
+
+        // 页面加载时检查登录状态
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUI();
+        });
+    </script>
+</body>
+</html>
+
