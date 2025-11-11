@@ -177,28 +177,31 @@ function renderScenarioSideFormulas(timelineItems, scenarioIndex) {
             }
         });
         
-        mediumGroups.forEach(mediumGroup => {
+        // 为同一时间点的所有介质类型生成HTML
+        const mediumGroupsHTML = mediumGroups.map(mediumGroup => {
             const mediumName = DailyUsageValidator ? DailyUsageValidator.getMediumName(mediumGroup.mediumType) : mediumGroup.mediumType;
             const formulasHTML = mediumGroup.formulas.map(f => 
                 renderFormulaCard(f.formulaData, f.formula, f.time, scenarioIndex)
             ).join('');
             
-            htmlParts.push(`
-                <div class="timeline-formulas-container" data-time="${time}">
-                    <div class="time-header" style="font-size: 14px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px;">
-                        ${time} - ${timeGroup.title}
+            return `
+                <div class="medium-group" style="margin-bottom: 15px;">
+                    <div class="medium-label" style="font-size: 12px; font-weight: 600; color: var(--primary-color); margin-bottom: 8px; padding: 4px 10px; background: rgba(102, 126, 234, 0.08); border-radius: 6px; display: inline-block;">
+                        ${mediumName}
                     </div>
-                    <div class="medium-group" style="margin-bottom: 15px;">
-                        <div class="medium-label" style="font-size: 12px; color: var(--secondary-color); margin-bottom: 6px; padding-left: 4px;">
-                            ${mediumName}
-                        </div>
-                        <div class="formula-cards-container">
-                            ${formulasHTML}
-                        </div>
+                    <div class="formula-cards-container">
+                        ${formulasHTML}
                     </div>
                 </div>
-            `);
-        });
+            `;
+        }).join('');
+        
+        // 同一时间点的所有配方放在同一个容器中
+        htmlParts.push(`
+            <div class="timeline-formulas-container" data-time="${time}">
+                ${mediumGroupsHTML}
+            </div>
+        `);
     });
     
     return htmlParts.join('');
@@ -304,22 +307,12 @@ function renderScenarios(scenarios) {
         return;
     }
     
-    // 计算并显示每日用量安全评估（每个场景分别计算，平行显示）
-    let safetyAssessmentHTML = '';
-    if (typeof DailyUsageValidator !== 'undefined') {
-        try {
-            safetyAssessmentHTML = DailyUsageValidator.generateMultipleSafetyAssessmentsHTML(scenarios);
-        } catch (e) {
-            console.error('Error generating safety assessment:', e);
-        }
-    }
-    
     // 合并时间线，提取所有时间点
     const mergedTimeline = mergeTimelines(scenarios.scenarios);
     
     if (mergedTimeline.length === 0) {
         console.error('No timeline items found');
-        container.innerHTML = safetyAssessmentHTML + `
+        container.innerHTML = `
             <div class="error-state">
                 <h3>场景渲染失败</h3>
                 <p>无法提取时间线数据，请检查场景数据格式。</p>
@@ -356,7 +349,7 @@ function renderScenarios(scenarios) {
     // 如果场景渲染失败，显示错误信息
     if (!leftScenarioHTML && !rightScenarioHTML) {
         console.error('All scenarios failed to render');
-        container.innerHTML = safetyAssessmentHTML + `
+        container.innerHTML = `
             <div class="error-state">
                 <h3>场景渲染失败</h3>
                 <p>无法渲染场景内容，可能是配方数据缺失。请检查控制台获取详细信息。</p>
@@ -378,7 +371,7 @@ function renderScenarios(scenarios) {
         </div>
     `;
     
-    container.innerHTML = scenariosLayoutHTML + safetyAssessmentHTML;
+    container.innerHTML = scenariosLayoutHTML;
     
     // 初始化选中配方功能
     initFormulaSelection();
