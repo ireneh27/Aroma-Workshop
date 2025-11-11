@@ -192,7 +192,9 @@ function renderScenarioSideFormulas(timelineItems, scenarioIndex) {
                         <div class="medium-label" style="font-size: 12px; color: var(--secondary-color); margin-bottom: 6px; padding-left: 4px;">
                             ${mediumName}
                         </div>
-                        ${formulasHTML}
+                        <div class="formula-cards-container">
+                            ${formulasHTML}
+                        </div>
                     </div>
                 </div>
             `);
