@@ -296,7 +296,7 @@ function mergeTimelines(scenarios) {
     });
 }
 
-// 渲染所有场景（优化版：使用DocumentFragment批量操作，减少重排）
+// 渲染所有场景（优化版：使用分批渲染，减少阻塞）
 function renderScenarios(scenarios) {
     const container = document.getElementById('scenariosContainer');
     if (!container) {
@@ -345,18 +345,57 @@ function renderScenarios(scenarios) {
         return;
     }
     
-    // 使用DocumentFragment批量操作，减少DOM重排
-    const fragment = document.createDocumentFragment();
+    // 先清空容器并显示骨架屏
+    container.innerHTML = '';
+    
+    // 创建布局容器
     const layoutDiv = document.createElement('div');
     layoutDiv.className = 'scenarios-layout';
+    container.appendChild(layoutDiv);
     
+    // 保存场景数据供时间轴点击使用
+    window.scenarioData = scenarios;
+    
+    // 分批渲染：先渲染时间轴和基本结构
+    renderTimelineFirst(mergedTimeline, layoutDiv, scenarios);
+}
+
+// 先渲染时间轴（快速显示）
+function renderTimelineFirst(mergedTimeline, layoutDiv, scenarios) {
     // 渲染中间时间轴
     const timelineHTML = mergedTimeline.map((item, index) => renderTimelineNode(item, index)).join('');
     const centralTimelineDiv = document.createElement('div');
     centralTimelineDiv.className = 'central-timeline';
     centralTimelineDiv.innerHTML = timelineHTML;
     
-    // 渲染左右两侧的场景
+    // 创建左右两侧的占位容器
+    const leftPlaceholder = document.createElement('div');
+    leftPlaceholder.className = 'scenario-side';
+    leftPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
+    
+    const rightPlaceholder = document.createElement('div');
+    rightPlaceholder.className = 'scenario-side';
+    rightPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
+    
+    // 添加到布局
+    layoutDiv.appendChild(leftPlaceholder);
+    layoutDiv.appendChild(centralTimelineDiv);
+    layoutDiv.appendChild(rightPlaceholder);
+    
+    // 初始化时间轴点击功能（不依赖场景内容）
+    requestAnimationFrame(() => {
+        initTimelineClick();
+    });
+    
+    // 分批渲染场景内容
+    requestAnimationFrame(() => {
+        renderScenarioSides(layoutDiv, scenarios, mergedTimeline);
+    });
+}
+
+// 渲染场景侧边（分批进行）
+function renderScenarioSides(layoutDiv, scenarios, mergedTimeline) {
+    // 渲染左侧场景
     const leftScenarioHTML = scenarios.scenarios[0] 
         ? renderScenarioSide(scenarios.scenarios[0], 0, mergedTimeline.map(item => ({
             time: item.time,
@@ -365,68 +404,48 @@ function renderScenarios(scenarios) {
         })))
         : '<div class="scenario-side"><div class="scenario-side-header"><p>场景1数据缺失</p></div></div>';
     
-    const rightScenarioHTML = scenarios.scenarios[1]
-        ? renderScenarioSide(scenarios.scenarios[1], 1, mergedTimeline.map(item => ({
-            time: item.time,
-            title: item.title,
-            formulas: item.scenarios[1] || []
-        })))
-        : '<div class="scenario-side"><div class="scenario-side-header"><p>场景2数据缺失</p></div></div>';
-    
-    // 如果场景渲染失败，显示错误信息
-    if (!leftScenarioHTML && !rightScenarioHTML) {
-        console.error('All scenarios failed to render');
-        container.innerHTML = `
-            <div class="error-state">
-                <h3>场景渲染失败</h3>
-                <p>无法渲染场景内容，可能是配方数据缺失。请检查控制台获取详细信息。</p>
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    场景数量: ${scenarios.scenarios.length}<br>
-                    配方数据库大小: ${Object.keys(FORMULA_DATABASE).length}
-                </p>
-            </div>
-        `;
-        return;
-    }
-    
-    // 使用临时容器解析HTML，然后添加到fragment
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = leftScenarioHTML + rightScenarioHTML;
-    
-    // 先添加左侧场景（第一个子元素）
-    const leftSide = tempDiv.firstElementChild;
-    if (leftSide) {
-        layoutDiv.appendChild(leftSide);
-    }
-    
-    // 添加中间时间轴
-    layoutDiv.appendChild(centralTimelineDiv);
-    
-    // 添加右侧场景（剩余的子元素）
-    while (tempDiv.firstElementChild) {
-        layoutDiv.appendChild(tempDiv.firstElementChild);
-    }
-    
-    fragment.appendChild(layoutDiv);
-    
-    // 使用requestAnimationFrame优化渲染，减少阻塞
-    requestAnimationFrame(() => {
-        // 一次性添加到DOM，减少重排
-        container.innerHTML = '';
-        container.appendChild(fragment);
-        
-        // 在下一帧初始化功能，避免阻塞渲染
+    // 先更新左侧
+    const leftPlaceholder = layoutDiv.querySelector('.scenario-side:first-child');
+    if (leftPlaceholder && leftScenarioHTML) {
         requestAnimationFrame(() => {
-            // 初始化选中配方功能
-            initFormulaSelection();
-            
-            // 初始化时间轴点击功能
-            initTimelineClick();
+            // 使用临时容器解析HTML，然后替换
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = leftScenarioHTML;
+            const newLeftSide = tempDiv.firstElementChild;
+            if (newLeftSide) {
+                leftPlaceholder.replaceWith(newLeftSide);
+            }
         });
-    });
+    }
     
-    // 保存场景数据供时间轴点击使用
-    window.scenarioData = scenarios;
+    // 然后渲染右侧场景
+    requestAnimationFrame(() => {
+        const rightScenarioHTML = scenarios.scenarios[1]
+            ? renderScenarioSide(scenarios.scenarios[1], 1, mergedTimeline.map(item => ({
+                time: item.time,
+                title: item.title,
+                formulas: item.scenarios[1] || []
+            })))
+            : '<div class="scenario-side"><div class="scenario-side-header"><p>场景2数据缺失</p></div></div>';
+        
+        const rightPlaceholder = layoutDiv.querySelector('.scenario-side:last-child');
+        if (rightPlaceholder && rightScenarioHTML) {
+            requestAnimationFrame(() => {
+                // 使用临时容器解析HTML，然后替换
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rightScenarioHTML;
+                const newRightSide = tempDiv.firstElementChild;
+                if (newRightSide) {
+                    rightPlaceholder.replaceWith(newRightSide);
+                    
+                    // 最后初始化选中配方功能
+                    requestAnimationFrame(() => {
+                        initFormulaSelection();
+                    });
+                }
+            });
+        }
+    });
 }
 
 // 存储选中的配方
@@ -742,12 +761,27 @@ function addResetButton() {
     }
 }
 
-// 主函数：加载并渲染场景建议（优化版：添加性能监控）
+// 主函数：加载并渲染场景建议（优化版：添加性能监控和进度提示）
 async function loadScenarioSuggestions() {
     const startTime = performance.now();
     showLoading();
     
+    // 更新加载提示
+    const updateLoadingMessage = (message) => {
+        const container = document.getElementById('scenariosContainer');
+        if (container) {
+            const loadingState = container.querySelector('.loading-state');
+            if (loadingState) {
+                const messageEl = loadingState.querySelector('p');
+                if (messageEl) {
+                    messageEl.textContent = message;
+                }
+            }
+        }
+    };
+    
     // 获取问卷数据
+    updateLoadingMessage('正在读取您的健康档案...');
     const questionnaireData = getQuestionnaireData();
     if (!questionnaireData) {
         showError('请先完成健康状况问卷');
@@ -761,6 +795,7 @@ async function loadScenarioSuggestions() {
     }
     
     // 检查AI是否可用
+    updateLoadingMessage('正在准备AI服务...');
     if (typeof generateScenarioSuggestions === 'undefined') {
         showError('AI功能未启用，无法生成场景建议');
         return;
@@ -812,6 +847,7 @@ async function loadScenarioSuggestions() {
     
     try {
         // 调用AI生成场景建议
+        updateLoadingMessage('正在生成个性化场景建议...');
         console.log('Calling generateScenarioSuggestions with data:', questionnaireData);
         const scenarios = await generateScenarioSuggestions(questionnaireData);
         
@@ -830,6 +866,7 @@ async function loadScenarioSuggestions() {
         }
         
         // 渲染场景
+        updateLoadingMessage('正在渲染场景内容...');
         const renderStartTime = performance.now();
         renderScenarios(scenarios);
         const renderTime = performance.now() - renderStartTime;
@@ -853,9 +890,9 @@ async function loadScenarioSuggestions() {
 }
 
 // 等待依赖加载完成（优化版：减少等待时间，提前显示内容）
-function waitForDependencies(callback, maxWaitTime = 5000) {
+function waitForDependencies(callback, maxWaitTime = 3000) {
     const startTime = Date.now();
-    const checkInterval = 50; // 减少检查间隔，从100ms改为50ms
+    const checkInterval = 30; // 进一步减少检查间隔到30ms
     
     // 先检查基本依赖（FORMULA_DATABASE和getQuestionnaireData），这些通常加载较快
     const checkBasicDependencies = setInterval(() => {
@@ -870,7 +907,9 @@ function waitForDependencies(callback, maxWaitTime = 5000) {
             // 基本依赖已加载，可以提前显示一些内容或开始准备
             console.log('Basic dependencies loaded');
             
-            // 继续等待AI相关依赖
+            // 继续等待AI相关依赖，但减少等待时间
+            let aiCheckCount = 0;
+            const maxAIChecks = Math.floor((maxWaitTime - (Date.now() - startTime)) / checkInterval);
             const checkAIDependencies = setInterval(() => {
                 const elapsed = Date.now() - startTime;
                 const allReady = typeof generateScenarioSuggestions !== 'undefined';
@@ -879,7 +918,7 @@ function waitForDependencies(callback, maxWaitTime = 5000) {
                     clearInterval(checkAIDependencies);
                     console.log('All dependencies loaded, starting scenario suggestions');
                     callback();
-                } else if (elapsed >= maxWaitTime) {
+                } else if (elapsed >= maxWaitTime || aiCheckCount >= maxAIChecks) {
                     clearInterval(checkAIDependencies);
                     // 即使AI未加载，也尝试继续（可能使用备用方案）
                     console.warn('AI dependencies not loaded, attempting to continue...');
@@ -900,6 +939,7 @@ function waitForDependencies(callback, maxWaitTime = 5000) {
                         callback();
                     }
                 }
+                aiCheckCount++;
             }, checkInterval);
         } else if (Date.now() - startTime >= maxWaitTime) {
             clearInterval(checkBasicDependencies);

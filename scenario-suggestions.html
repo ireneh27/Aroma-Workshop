@@ -534,13 +534,13 @@
         </div>
     </main>
 
+    <!-- 关键依赖：优先加载 -->
     <script src="common.js"></script>
-    <script src="auth.js"></script>
-    <script src="auth-nav.js"></script>
-    <script src="questionnaire.js"></script>
-    <!-- 关键依赖：同步加载 -->
     <script src="formula-suggestions.js"></script>
-    <!-- 非关键依赖：异步加载以提升页面加载速度 -->
+    <script src="questionnaire.js"></script>
+    <!-- 次要依赖：异步加载 -->
+    <script src="auth.js" defer></script>
+    <script src="auth-nav.js" defer></script>
     <script src="daily-usage-validator.js" defer></script>
     <script src="ai-service.js" defer></script>
     <script src="scenario-suggestions.js" defer></script>
