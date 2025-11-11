@@ -24,8 +24,8 @@ function extractOils(formula) {
     return oils;
 }
 
-// 渲染配方卡片
-function renderFormulaCard(formulaData, formula) {
+// 渲染配方卡片（支持选中功能）
+function renderFormulaCard(formulaData, formula, time, scenarioIndex) {
     if (!formula) {
         console.warn('Formula not found:', formulaData.formulaId);
         return '';
@@ -34,19 +34,35 @@ function renderFormulaCard(formulaData, formula) {
     const oils = extractOils(formula);
     const usageType = USAGE_TYPE_MAP[formulaData.usageType] || formulaData.usageType;
     
+    // 获取介质类型
+    let mediumType = 'base-oil';
+    if (typeof DailyUsageValidator !== 'undefined') {
+        mediumType = DailyUsageValidator.getFormulaMediumType(formula);
+    }
+    const mediumName = DailyUsageValidator ? DailyUsageValidator.getMediumName(mediumType) : usageType;
+    
+    const cardId = `formula-card-${scenarioIndex}-${String(formula.id)}-${time.replace(':', '-')}`;
+    const formulaIdStr = String(formula.id);
+    const timeEscaped = time.replace(/'/g, "\\'");
+    const mediumTypeEscaped = mediumType.replace(/'/g, "\\'");
+    
     return `
-        <a href="formula-detail.html?id=${formula.id}" class="formula-card">
+        <div class="formula-card" data-formula-id="${formulaIdStr}" data-scenario-index="${scenarioIndex}" data-time="${time}" data-medium-type="${mediumType}" id="${cardId}">
             <div class="formula-card-header">
-                <div class="formula-card-name">${formula.name || '未命名配方'}</div>
+                <div class="formula-card-name">${(formula.name || '未命名配方').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                 <span class="usage-type-badge">${usageType}</span>
             </div>
-            ${formulaData.reason ? `<div class="formula-card-reason">${formulaData.reason}</div>` : ''}
+            ${formulaData.reason ? `<div class="formula-card-reason">${(formulaData.reason || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
             ${oils.length > 0 ? `
                 <div class="formula-card-tags">
-                    ${oils.map(oil => `<a href="oil-detail.html?oil=${encodeURIComponent(oil)}" onclick="event.stopPropagation();" class="oil-tag">${oil}</a>`).join('')}
+                    ${oils.map(oil => `<a href="oil-detail.html?oil=${encodeURIComponent(oil)}" onclick="event.stopPropagation();" class="oil-tag">${oil.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</a>`).join('')}
                 </div>
             ` : ''}
-        </a>
+            <div class="formula-card-actions" style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                <button class="formula-select-btn" onclick="selectFormula('${formulaIdStr}', ${scenarioIndex}, '${timeEscaped}', '${mediumTypeEscaped}'); event.stopPropagation();" style="flex: 1; padding: 6px 12px; background: var(--accent-gradient); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">选择配方</button>
+                <a href="formula-detail.html?id=${formulaIdStr}" class="formula-detail-link" onclick="event.stopPropagation();" style="padding: 6px 12px; background: white; color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">详情</a>
+            </div>
+        </div>
     `;
 }
 
@@ -66,45 +82,124 @@ function renderTimelineNode(item) {
     `;
 }
 
-// 渲染场景侧边的配方（左侧或右侧）
+// 渲染场景侧边的配方（左侧或右侧）- 按时间排序，同介质分组
 function renderScenarioSideFormulas(timelineItems, scenarioIndex) {
     if (!timelineItems || timelineItems.length === 0) {
         return '';
     }
     
-    const formulasHTML = timelineItems.map(item => {
-        if (!item || !item.formulas || !Array.isArray(item.formulas) || item.formulas.length === 0) {
-            return '';
-        }
-        
-        if (typeof FORMULA_DATABASE === 'undefined' || !FORMULA_DATABASE) {
-            return '';
-        }
-        
-        const itemFormulasHTML = item.formulas
-            .filter(formulaData => formulaData && formulaData.formulaId)
-            .map(formulaData => {
-                const formula = FORMULA_DATABASE[formulaData.formulaId];
-                if (!formula) {
-                    return '';
-                }
-                return renderFormulaCard(formulaData, formula);
-            })
-            .filter(html => html)
-            .join('');
-        
-        if (!itemFormulasHTML) {
-            return '';
-        }
-        
-        return `
-            <div class="timeline-formulas-container">
-                ${itemFormulasHTML}
-            </div>
-        `;
-    }).filter(html => html).join('');
+    if (typeof FORMULA_DATABASE === 'undefined' || !FORMULA_DATABASE) {
+        return '';
+    }
     
-    return formulasHTML;
+    // 收集所有配方，包含时间、介质类型等信息
+    const allFormulas = [];
+    timelineItems.forEach(item => {
+        if (!item || !item.formulas || !Array.isArray(item.formulas) || item.formulas.length === 0) {
+            return;
+        }
+        
+        item.formulas.forEach(formulaData => {
+            if (!formulaData || !formulaData.formulaId) return;
+            
+            const formula = FORMULA_DATABASE[formulaData.formulaId];
+            if (!formula) return;
+            
+            // 获取介质类型
+            let mediumType = 'base-oil';
+            if (typeof DailyUsageValidator !== 'undefined') {
+                mediumType = DailyUsageValidator.getFormulaMediumType(formula);
+            }
+            
+            allFormulas.push({
+                formulaData,
+                formula,
+                time: item.time || '00:00',
+                timeOrder: parseInt((item.time || '00:00').replace(':', '')),
+                mediumType,
+                title: item.title || ''
+            });
+        });
+    });
+    
+    if (allFormulas.length === 0) {
+        return '';
+    }
+    
+    // 按时间排序
+    allFormulas.sort((a, b) => a.timeOrder - b.timeOrder);
+    
+    // 按时间分组，然后在每个时间段内按介质类型分组
+    const formulasByTime = {};
+    allFormulas.forEach(f => {
+        if (!formulasByTime[f.time]) {
+            formulasByTime[f.time] = {
+                time: f.time,
+                title: f.title,
+                formulasByMedium: {}
+            };
+        }
+        
+        if (!formulasByTime[f.time].formulasByMedium[f.mediumType]) {
+            formulasByTime[f.time].formulasByMedium[f.mediumType] = [];
+        }
+        
+        formulasByTime[f.time].formulasByMedium[f.mediumType].push(f);
+    });
+    
+    // 生成HTML
+    const htmlParts = [];
+    Object.keys(formulasByTime).sort((a, b) => {
+        return parseInt(a.replace(':', '')) - parseInt(b.replace(':', ''));
+    }).forEach(time => {
+        const timeGroup = formulasByTime[time];
+        const mediumGroups = [];
+        
+        // 按介质类型顺序排列（定义优先级）
+        const mediumOrder = ['handcream', 'bodylotion', 'base-oil', 'footbath', 'spray', 'rosewater', 'rosewater-spray', 'diffuser', 'alcohol-spray'];
+        
+        mediumOrder.forEach(mediumType => {
+            if (timeGroup.formulasByMedium[mediumType]) {
+                mediumGroups.push({
+                    mediumType,
+                    formulas: timeGroup.formulasByMedium[mediumType]
+                });
+            }
+        });
+        
+        // 添加其他未定义的介质类型
+        Object.keys(timeGroup.formulasByMedium).forEach(mediumType => {
+            if (!mediumOrder.includes(mediumType)) {
+                mediumGroups.push({
+                    mediumType,
+                    formulas: timeGroup.formulasByMedium[mediumType]
+                });
+            }
+        });
+        
+        mediumGroups.forEach(mediumGroup => {
+            const mediumName = DailyUsageValidator ? DailyUsageValidator.getMediumName(mediumGroup.mediumType) : mediumGroup.mediumType;
+            const formulasHTML = mediumGroup.formulas.map(f => 
+                renderFormulaCard(f.formulaData, f.formula, f.time, scenarioIndex)
+            ).join('');
+            
+            htmlParts.push(`
+                <div class="timeline-formulas-container" data-time="${time}">
+                    <div class="time-header" style="font-size: 14px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px;">
+                        ${time} - ${timeGroup.title}
+                    </div>
+                    <div class="medium-group" style="margin-bottom: 15px;">
+                        <div class="medium-label" style="font-size: 12px; color: var(--secondary-color); margin-bottom: 6px; padding-left: 4px;">
+                            ${mediumName}
+                        </div>
+                        ${formulasHTML}
+                    </div>
+                </div>
+            `);
+        });
+    });
+    
+    return htmlParts.join('');
 }
 
 // 渲染场景侧边（包含标题和配方）
@@ -281,7 +376,147 @@ function renderScenarios(scenarios) {
         </div>
     `;
     
-    container.innerHTML = safetyAssessmentHTML + scenariosLayoutHTML;
+    container.innerHTML = scenariosLayoutHTML + safetyAssessmentHTML;
+    
+    // 初始化选中配方功能
+    initFormulaSelection();
+}
+
+// 存储选中的配方
+let selectedFormulas = {}; // { scenarioIndex: { formulaId: { formula, time, mediumType } } }
+
+// 初始化配方选中功能
+function initFormulaSelection() {
+    // 清除之前的选中状态
+    selectedFormulas = {};
+    
+    // 为每个场景创建安全验证容器
+    const scenarioSides = document.querySelectorAll('.scenario-side');
+    scenarioSides.forEach((side, index) => {
+        const safetyContainer = document.createElement('div');
+        safetyContainer.className = 'selected-formulas-safety';
+        safetyContainer.id = `safety-container-${index}`;
+        safetyContainer.style.cssText = 'margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; display: none;';
+        side.appendChild(safetyContainer);
+    });
+}
+
+// 选中配方（全局函数，供HTML调用）
+window.selectFormula = function(formulaId, scenarioIndex, time, mediumType) {
+    if (!FORMULA_DATABASE || !FORMULA_DATABASE[formulaId]) {
+        console.error('Formula not found:', formulaId);
+        return;
+    }
+    
+    const formula = FORMULA_DATABASE[formulaId];
+    
+    // 初始化场景的选中列表
+    if (!selectedFormulas[scenarioIndex]) {
+        selectedFormulas[scenarioIndex] = {};
+    }
+    
+    // 切换选中状态
+    if (selectedFormulas[scenarioIndex][formulaId]) {
+        // 取消选中
+        delete selectedFormulas[scenarioIndex][formulaId];
+        updateFormulaCardState(formulaId, scenarioIndex, false);
+    } else {
+        // 选中
+        selectedFormulas[scenarioIndex][formulaId] = {
+            formula,
+            time,
+            mediumType
+        };
+        updateFormulaCardState(formulaId, scenarioIndex, true);
+    }
+    
+    // 更新安全验证显示
+    updateSafetyValidation(scenarioIndex);
+}
+
+// 更新配方卡片状态
+function updateFormulaCardState(formulaId, scenarioIndex, isSelected) {
+    const card = document.querySelector(`.formula-card[data-formula-id="${formulaId}"][data-scenario-index="${scenarioIndex}"]`);
+    if (!card) return;
+    
+    const selectBtn = card.querySelector('.formula-select-btn');
+    if (!selectBtn) return;
+    
+    if (isSelected) {
+        card.style.border = '3px solid var(--accent-color)';
+        card.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)';
+        selectBtn.textContent = '已选中';
+        selectBtn.style.background = '#10b981';
+    } else {
+        card.style.border = '2px solid rgba(102, 126, 234, 0.2)';
+        card.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)';
+        selectBtn.textContent = '选择配方';
+        selectBtn.style.background = 'var(--accent-gradient)';
+    }
+}
+
+// 更新安全验证显示
+function updateSafetyValidation(scenarioIndex) {
+    const safetyContainer = document.getElementById(`safety-container-${scenarioIndex}`);
+    if (!safetyContainer) return;
+    
+    const selected = selectedFormulas[scenarioIndex];
+    if (!selected || Object.keys(selected).length === 0) {
+        safetyContainer.style.display = 'none';
+        return;
+    }
+    
+    // 构建场景对象用于验证
+    const scenario = {
+        name: `场景 ${scenarioIndex + 1}`,
+        timeline: []
+    };
+    
+    // 按时间分组选中的配方
+    const formulasByTime = {};
+    Object.values(selected).forEach(item => {
+        if (!formulasByTime[item.time]) {
+            formulasByTime[item.time] = [];
+        }
+        formulasByTime[item.time].push({
+            formulaId: item.formula.id,
+            usageType: item.mediumType,
+            reason: `已选中的配方`
+        });
+    });
+    
+    // 构建时间线
+    Object.keys(formulasByTime).sort().forEach(time => {
+        scenario.timeline.push({
+            time,
+            title: '已选配方',
+            formulas: formulasByTime[time]
+        });
+    });
+    
+    // 计算安全评估
+    if (typeof DailyUsageValidator === 'undefined') {
+        safetyContainer.innerHTML = '<p style="color: #666;">安全验证功能未加载</p>';
+        safetyContainer.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const usageData = DailyUsageValidator.calculateScenarioDailyUsage(scenario);
+        const safetyHTML = DailyUsageValidator.generateSafetyAssessmentCard(usageData, scenarioIndex);
+        
+        safetyContainer.innerHTML = `
+            <h3 style="font-size: 18px; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">
+                已选配方安全评估
+            </h3>
+            ${safetyHTML}
+        `;
+        safetyContainer.style.display = 'block';
+    } catch (e) {
+        console.error('Error calculating safety validation:', e);
+        safetyContainer.innerHTML = '<p style="color: #dc2626;">安全验证计算出错</p>';
+        safetyContainer.style.display = 'block';
+    }
 }
 
 // 显示错误状态

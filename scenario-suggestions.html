@@ -173,7 +173,7 @@
             border: 2px solid rgba(102, 126, 234, 0.2);
             border-radius: 10px;
             padding: 15px;
-            cursor: pointer;
+            cursor: default;
             transition: all 0.3s ease;
             text-decoration: none;
             color: inherit;
@@ -181,11 +181,24 @@
             position: relative;
             width: 100%;
             box-sizing: border-box;
+            margin-bottom: 12px;
         }
         .formula-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
             border-color: var(--accent-color);
+        }
+        .formula-card.selected {
+            border: 3px solid var(--accent-color);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        }
+        .formula-select-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .formula-detail-link:hover {
+            background: var(--accent-color);
+            color: white;
         }
         .formula-card-header {
             display: flex;
