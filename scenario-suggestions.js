@@ -11,149 +11,176 @@ const USAGE_TYPE_MAP = {
 
 // 生成降级场景建议（基于规则，不依赖AI）
 function generateFallbackScenarios(questionnaireData) {
-    if (!questionnaireData || typeof FORMULA_DATABASE === 'undefined') {
+    console.log('generateFallbackScenarios called with:', questionnaireData);
+    
+    if (!questionnaireData) {
+        console.error('generateFallbackScenarios: questionnaireData is null or undefined');
+        return null;
+    }
+    
+    if (typeof FORMULA_DATABASE === 'undefined' || !FORMULA_DATABASE) {
+        console.error('generateFallbackScenarios: FORMULA_DATABASE is not available');
         return null;
     }
     
     const usageTypes = questionnaireData.usage || [];
     if (usageTypes.length === 0) {
+        console.warn('generateFallbackScenarios: No usage types selected');
         return null;
     }
     
     // 使用规则匹配系统获取推荐配方
     if (typeof calculateFormulaScores === 'undefined') {
+        console.error('generateFallbackScenarios: calculateFormulaScores function is not available');
+        console.log('Available globals:', {
+            FORMULA_DATABASE: typeof FORMULA_DATABASE !== 'undefined',
+            getQuestionnaireData: typeof getQuestionnaireData !== 'undefined',
+            calculateFormulaScores: typeof calculateFormulaScores !== 'undefined'
+        });
         return null;
     }
     
-    const scores = calculateFormulaScores(questionnaireData);
-    const sortedFormulas = Object.entries(scores)
-        .filter(([_, score]) => score > 0)
-        .sort(([_, a], [__, b]) => b - a)
-        .slice(0, 10)
-        .map(([formulaId]) => FORMULA_DATABASE[formulaId])
-        .filter(f => f);
-    
-    if (sortedFormulas.length === 0) {
-        return null;
-    }
-    
-    // 按使用方式分组
-    const formulasByUsage = {};
-    sortedFormulas.forEach(formula => {
-        const name = (formula.name || '').toLowerCase();
-        const subtitle = (formula.subtitle || '').toLowerCase();
-        const text = name + ' ' + subtitle;
+    try {
+        const scores = calculateFormulaScores(questionnaireData);
+        console.log('calculateFormulaScores returned:', scores);
         
-        let usageType = '';
-        if (text.includes('护手霜') || text.includes('handcream')) usageType = 'handcream';
-        else if (text.includes('身体乳') || text.includes('bodylotion')) usageType = 'bodylotion';
-        else if (text.includes('泡脚') || text.includes('泡澡') || text.includes('footbath')) usageType = 'footbath';
-        else if (text.includes('扩香') || text.includes('diffuser')) usageType = 'diffuser';
-        else if (text.includes('喷雾') || text.includes('spray')) usageType = 'spray';
+        const sortedFormulas = Object.entries(scores)
+            .filter(([_, score]) => score > 0)
+            .sort(([_, a], [__, b]) => b - a)
+            .slice(0, 10)
+            .map(([formulaId]) => FORMULA_DATABASE[formulaId])
+            .filter(f => f);
         
-        if (usageType && usageTypes.includes(usageType)) {
-            if (!formulasByUsage[usageType]) {
-                formulasByUsage[usageType] = [];
-            }
-            formulasByUsage[usageType].push(formula);
+        console.log('sortedFormulas:', sortedFormulas.length, 'formulas found');
+        
+        if (sortedFormulas.length === 0) {
+            console.warn('generateFallbackScenarios: No matching formulas found');
+            return null;
         }
-    });
-    
-    // 生成两个简化场景
-    const scenarios = [];
-    
-    // 场景1：工作日场景
-    const scenario1 = {
-        name: '工作日场景',
-        description: '适合工作日使用的简化方案，重点改善工作压力和疲劳',
-        timeline: []
-    };
-    
-    // 添加早晨时间点
-    if (formulasByUsage.handcream && formulasByUsage.handcream.length > 0) {
-        scenario1.timeline.push({
-            time: '08:00',
-            title: '起床后',
-            formulas: [{
-                formulaId: formulasByUsage.handcream[0].id,
-                usageType: 'handcream',
-                reason: '早晨使用，提神醒脑，缓解工作压力'
-            }]
+        
+        // 按使用方式分组
+        const formulasByUsage = {};
+        sortedFormulas.forEach(formula => {
+            const name = (formula.name || '').toLowerCase();
+            const subtitle = (formula.subtitle || '').toLowerCase();
+            const text = name + ' ' + subtitle;
+            
+            let usageType = '';
+            if (text.includes('护手霜') || text.includes('handcream')) usageType = 'handcream';
+            else if (text.includes('身体乳') || text.includes('bodylotion')) usageType = 'bodylotion';
+            else if (text.includes('泡脚') || text.includes('泡澡') || text.includes('footbath')) usageType = 'footbath';
+            else if (text.includes('扩香') || text.includes('diffuser')) usageType = 'diffuser';
+            else if (text.includes('喷雾') || text.includes('spray')) usageType = 'spray';
+            
+            if (usageType && usageTypes.includes(usageType)) {
+                if (!formulasByUsage[usageType]) {
+                    formulasByUsage[usageType] = [];
+                }
+                formulasByUsage[usageType].push(formula);
+            }
         });
-    }
-    
-    // 添加工作时段
-    if (formulasByUsage.diffuser && formulasByUsage.diffuser.length > 0) {
-        scenario1.timeline.push({
-            time: '10:00',
-            title: '工作时段',
-            formulas: [{
-                formulaId: formulasByUsage.diffuser[0].id,
-                usageType: 'diffuser',
-                reason: '工作时段扩香，提升专注力和工作效率'
-            }]
-        });
-    }
-    
-    // 添加晚上时间点
-    if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 0) {
-        scenario1.timeline.push({
-            time: '20:00',
-            title: '睡前',
-            formulas: [{
-                formulaId: formulasByUsage.bodylotion[0].id,
-                usageType: 'bodylotion',
-                reason: '睡前使用，放松身心，改善睡眠'
-            }]
-        });
-    }
-    
-    if (scenario1.timeline.length > 0) {
-        scenarios.push(scenario1);
-    }
-    
-    // 场景2：休息日场景
-    const scenario2 = {
-        name: '休息日场景',
-        description: '适合休息日使用的方案，重点调理和放松',
-        timeline: []
-    };
-    
-    // 添加早晨时间点
-    if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 1) {
-        scenario2.timeline.push({
-            time: '09:00',
-            title: '起床后',
-            formulas: [{
-                formulaId: formulasByUsage.bodylotion[1].id,
-                usageType: 'bodylotion',
-                reason: '休息日早晨使用，全面调理身体'
-            }]
-        });
-    }
-    
-    // 添加下午时间点
-    if (formulasByUsage.footbath && formulasByUsage.footbath.length > 0) {
-        scenario2.timeline.push({
-            time: '19:00',
-            title: '晚上',
-            formulas: [{
-                formulaId: formulasByUsage.footbath[0].id,
-                usageType: 'footbath',
-                reason: '晚上泡脚，温阳散寒，促进循环'
-            }]
-        });
-    }
-    
-    if (scenario2.timeline.length > 0) {
-        scenarios.push(scenario2);
-    }
-    
-    if (scenarios.length === 0) {
+        
+        // 生成两个简化场景
+        const scenarios = [];
+        
+        // 场景1：工作日场景
+        const scenario1 = {
+            name: '工作日场景',
+            description: '适合工作日使用的简化方案，重点改善工作压力和疲劳',
+            timeline: []
+        };
+        
+        // 添加早晨时间点
+        if (formulasByUsage.handcream && formulasByUsage.handcream.length > 0) {
+            scenario1.timeline.push({
+                time: '08:00',
+                title: '起床后',
+                formulas: [{
+                    formulaId: formulasByUsage.handcream[0].id,
+                    usageType: 'handcream',
+                    reason: '早晨使用，提神醒脑，缓解工作压力'
+                }]
+            });
+        }
+        
+        // 添加工作时段
+        if (formulasByUsage.diffuser && formulasByUsage.diffuser.length > 0) {
+            scenario1.timeline.push({
+                time: '10:00',
+                title: '工作时段',
+                formulas: [{
+                    formulaId: formulasByUsage.diffuser[0].id,
+                    usageType: 'diffuser',
+                    reason: '工作时段扩香，提升专注力和工作效率'
+                }]
+            });
+        }
+        
+        // 添加晚上时间点
+        if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 0) {
+            scenario1.timeline.push({
+                time: '20:00',
+                title: '睡前',
+                formulas: [{
+                    formulaId: formulasByUsage.bodylotion[0].id,
+                    usageType: 'bodylotion',
+                    reason: '睡前使用，放松身心，改善睡眠'
+                }]
+            });
+        }
+        
+        if (scenario1.timeline.length > 0) {
+            scenarios.push(scenario1);
+        }
+        
+        // 场景2：休息日场景
+        const scenario2 = {
+            name: '休息日场景',
+            description: '适合休息日使用的方案，重点调理和放松',
+            timeline: []
+        };
+        
+        // 添加早晨时间点
+        if (formulasByUsage.bodylotion && formulasByUsage.bodylotion.length > 1) {
+            scenario2.timeline.push({
+                time: '09:00',
+                title: '起床后',
+                formulas: [{
+                    formulaId: formulasByUsage.bodylotion[1].id,
+                    usageType: 'bodylotion',
+                    reason: '休息日早晨使用，全面调理身体'
+                }]
+            });
+        }
+        
+        // 添加下午时间点
+        if (formulasByUsage.footbath && formulasByUsage.footbath.length > 0) {
+            scenario2.timeline.push({
+                time: '19:00',
+                title: '晚上',
+                formulas: [{
+                    formulaId: formulasByUsage.footbath[0].id,
+                    usageType: 'footbath',
+                    reason: '晚上泡脚，温阳散寒，促进循环'
+                }]
+            });
+        }
+        
+        if (scenario2.timeline.length > 0) {
+            scenarios.push(scenario2);
+        }
+        
+        if (scenarios.length === 0) {
+            console.warn('generateFallbackScenarios: No scenarios generated');
+            return null;
+        }
+        
+        console.log('generateFallbackScenarios: Generated', scenarios.length, 'scenarios');
+        return { scenarios };
+    } catch (error) {
+        console.error('generateFallbackScenarios error:', error);
         return null;
     }
-    
-    return { scenarios };
 }
 
 // 提取配方中的精油名称
@@ -1053,36 +1080,53 @@ function addResetButton() {
 
 // 主函数：加载并渲染场景建议（优化版：添加性能监控和进度提示）
 async function loadScenarioSuggestions() {
+    console.log('=== loadScenarioSuggestions started ===');
     const startTime = performance.now();
-    showLoading();
     
-    // 更新加载提示
-    const updateLoadingMessage = (message) => {
-        const container = document.getElementById('scenariosContainer');
-        if (container) {
-            const loadingState = container.querySelector('.loading-state');
-            if (loadingState) {
-                const messageEl = loadingState.querySelector('p');
-                if (messageEl) {
-                    messageEl.textContent = message;
+    try {
+        showLoading();
+        
+        // 更新加载提示
+        const updateLoadingMessage = (message) => {
+            const container = document.getElementById('scenariosContainer');
+            if (container) {
+                const loadingState = container.querySelector('.loading-state');
+                if (loadingState) {
+                    const messageEl = loadingState.querySelector('p');
+                    if (messageEl) {
+                        messageEl.textContent = message;
+                    }
                 }
             }
+        };
+        
+        // 获取问卷数据
+        updateLoadingMessage('正在读取您的健康档案...');
+        console.log('Getting questionnaire data...');
+        
+        if (typeof getQuestionnaireData === 'undefined') {
+            console.error('getQuestionnaireData function is not available');
+            showError('系统错误：无法读取问卷数据函数。请刷新页面重试。');
+            return;
         }
-    };
-    
-    // 获取问卷数据
-    updateLoadingMessage('正在读取您的健康档案...');
-    const questionnaireData = getQuestionnaireData();
-    if (!questionnaireData) {
-        showError('请先完成健康状况问卷');
-        return;
-    }
-    
-    // 检查是否选择了使用方式
-    if (!questionnaireData.usage || questionnaireData.usage.length === 0) {
-        showError('请至少选择一种使用方式');
-        return;
-    }
+        
+        const questionnaireData = getQuestionnaireData();
+        console.log('Questionnaire data:', questionnaireData);
+        
+        if (!questionnaireData) {
+            console.warn('No questionnaire data found');
+            showError('请先完成健康状况问卷');
+            return;
+        }
+        
+        // 检查是否选择了使用方式
+        if (!questionnaireData.usage || questionnaireData.usage.length === 0) {
+            console.warn('No usage types selected');
+            showError('请至少选择一种使用方式');
+            return;
+        }
+        
+        console.log('Usage types selected:', questionnaireData.usage);
     
     // 检查AI是否可用（如果不可用，将使用降级方案）
     updateLoadingMessage('正在准备AI服务...');
@@ -1261,6 +1305,7 @@ async function loadScenarioSuggestions() {
             errorMessage = 'AI查询次数已用完，请购买更多次数。';
         }
         
+        console.error('=== loadScenarioSuggestions error ===', error);
         showError(errorMessage);
     }
 }
@@ -1382,10 +1427,21 @@ window.switchViewMode = function(mode) {
 
 // 页面加载时执行（优化：使用更高效的加载策略）
 function initScenarioSuggestions() {
-    console.log('Initializing scenario suggestions...');
-    console.log('FORMULA_DATABASE:', typeof FORMULA_DATABASE !== 'undefined' ? 'loaded' : 'not loaded');
+    console.log('=== Initializing scenario suggestions ===');
+    console.log('Document ready state:', document.readyState);
+    console.log('FORMULA_DATABASE:', typeof FORMULA_DATABASE !== 'undefined' ? 'loaded (' + Object.keys(FORMULA_DATABASE || {}).length + ' formulas)' : 'not loaded');
     console.log('getQuestionnaireData:', typeof getQuestionnaireData !== 'undefined' ? 'loaded' : 'not loaded');
+    console.log('calculateFormulaScores:', typeof calculateFormulaScores !== 'undefined' ? 'loaded' : 'not loaded');
     console.log('generateScenarioSuggestions:', typeof window.generateScenarioSuggestions !== 'undefined' ? 'loaded' : 'not loaded');
+    console.log('DailyUsageValidator:', typeof DailyUsageValidator !== 'undefined' ? 'loaded' : 'not loaded');
+    
+    // 检查容器是否存在
+    const container = document.getElementById('scenariosContainer');
+    if (!container) {
+        console.error('scenariosContainer element not found!');
+        return;
+    }
+    console.log('scenariosContainer found');
     
     waitForDependencies(loadScenarioSuggestions);
 }
