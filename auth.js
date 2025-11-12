@@ -367,85 +367,7 @@ async function purchaseAIInquiries() {
     window.location.href = `payment.html?type=ai&amount=${AI_PURCHASE_AMOUNT}&price=${AI_PURCHASE_PRICE}`;
 }
 
-// ==================== 用户收藏和使用历史管理 ====================
-
-// 获取用户收藏的配方ID列表
-function getUserFavorites() {
-    const user = getCurrentUser();
-    if (!user) return [];
-    
-    const favoritesKey = `user_favorites_${user.id}`;
-    try {
-        const favorites = localStorage.getItem(favoritesKey);
-        return favorites ? JSON.parse(favorites) : [];
-    } catch (e) {
-        console.error('Error loading favorites:', e);
-        return [];
-    }
-}
-
-// 添加配方到收藏
-function addToFavorites(formulaId) {
-    const user = getCurrentUser();
-    if (!user) {
-        return {
-            success: false,
-            message: '请先登录'
-        };
-    }
-    
-    const favorites = getUserFavorites();
-    if (favorites.includes(formulaId)) {
-        return {
-            success: false,
-            message: '该配方已在收藏中'
-        };
-    }
-    
-    favorites.push(formulaId);
-    const favoritesKey = `user_favorites_${user.id}`;
-    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
-    
-    return {
-        success: true,
-        message: '已添加到收藏'
-    };
-}
-
-// 从收藏中移除配方
-function removeFromFavorites(formulaId) {
-    const user = getCurrentUser();
-    if (!user) {
-        return {
-            success: false,
-            message: '请先登录'
-        };
-    }
-    
-    const favorites = getUserFavorites();
-    const index = favorites.indexOf(formulaId);
-    if (index === -1) {
-        return {
-            success: false,
-            message: '该配方不在收藏中'
-        };
-    }
-    
-    favorites.splice(index, 1);
-    const favoritesKey = `user_favorites_${user.id}`;
-    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
-    
-    return {
-        success: true,
-        message: '已从收藏中移除'
-    };
-}
-
-// 检查配方是否已收藏
-function isFavorite(formulaId) {
-    const favorites = getUserFavorites();
-    return favorites.includes(formulaId);
-}
+// ==================== 用户使用历史管理 ====================
 
 // 获取用户使用历史（最近查看的配方）
 function getUserHistory(maxItems = 20) {
@@ -516,18 +438,15 @@ function getUserStatistics() {
     const user = getCurrentUser();
     if (!user) {
         return {
-            totalFavorites: 0,
             totalHistory: 0,
             totalAIInquiries: 0,
             remainingAIInquiries: 0
         };
     }
     
-    const favorites = getUserFavorites();
     const history = getUserHistory();
     
     return {
-        totalFavorites: favorites.length,
         totalHistory: history.length,
         totalAIInquiries: user.aiInquiriesUsed || 0,
         remainingAIInquiries: getRemainingAIInquiries()
@@ -701,11 +620,6 @@ if (typeof window !== 'undefined') {
         handleWeChatCallback,
         purchaseAIInquiries,
         handlePaymentSuccess,
-        // 收藏功能
-        getUserFavorites,
-        addToFavorites,
-        removeFromFavorites,
-        isFavorite,
         // 使用历史
         getUserHistory,
         addToHistory,

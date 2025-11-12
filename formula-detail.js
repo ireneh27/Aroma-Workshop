@@ -93,24 +93,12 @@ function renderFormulaDetail() {
         return `<a href="oil-detail.html?oil=${encodeURIComponent(oil)}" class="oil-tag-large" style="background: ${backgroundColor}; color: ${textColor}; text-decoration: none; display: inline-block;">${oil}</a>`;
     }).join('');
     
-    // 检查是否已收藏
-    const isFav = typeof window.authSystem !== 'undefined' && window.authSystem.isFavorite(formula.id);
-    
     // 构建详细HTML
     let html = `
         <div class="formula-detail-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <span class="base-type-badge ${baseTypeInfo.class}" style="display: inline-block;">${baseTypeInfo.name}</span>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    ${typeof window.authSystem !== 'undefined' && window.authSystem.isUserLoggedIn() ? `
-                    <button id="favoriteBtn" onclick="toggleFavorite('${formula.id}')" 
-                            class="btn" 
-                            style="background: ${isFav ? '#ff6b6b' : 'white'}; color: ${isFav ? 'white' : '#ff6b6b'}; border: 2px solid #ff6b6b; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;"
-                            onmouseover="this.style.transform='translateY(-2px)'; this.style.opacity='0.9';"
-                            onmouseout="this.style.transform='translateY(0)'; this.style.opacity='1';">
-                        ${isFav ? '❤️ 已收藏' : '🤍 收藏'}
-                    </button>
-                    ` : ''}
                     <button onclick="saveFormulaToDatabase(FORMULA_DATABASE['${formula.id}'])" 
                             class="btn btn-primary" 
                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);"
@@ -168,40 +156,6 @@ function renderFormulaDetail() {
     // 记录到使用历史
     if (typeof window.authSystem !== 'undefined' && window.authSystem.isUserLoggedIn()) {
         window.authSystem.addToHistory(formula.id, formula.name);
-    }
-}
-
-// 切换收藏状态
-function toggleFavorite(formulaId) {
-    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
-        alert('请先登录以使用收藏功能');
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    const isFav = window.authSystem.isFavorite(formulaId);
-    let result;
-    
-    if (isFav) {
-        result = window.authSystem.removeFromFavorites(formulaId);
-    } else {
-        result = window.authSystem.addToFavorites(formulaId);
-    }
-    
-    if (result.success) {
-        // 更新按钮状态
-        const btn = document.getElementById('favoriteBtn');
-        if (btn) {
-            const newIsFav = window.authSystem.isFavorite(formulaId);
-            btn.style.background = newIsFav ? '#ff6b6b' : 'white';
-            btn.style.color = newIsFav ? 'white' : '#ff6b6b';
-            btn.innerHTML = newIsFav ? '❤️ 已收藏' : '🤍 收藏';
-        }
-        
-        // 显示提示消息
-        showSaveMessage(result.message, true);
-    } else {
-        showSaveMessage(result.message, false);
     }
 }
 
@@ -577,8 +531,5 @@ document.addEventListener('DOMContentLoaded', function() {
     window.saveFormulaToDatabase = function(formula) {
         return saveFormulaToDatabase(formula);
     };
-    
-    // 将收藏函数暴露到全局
-    window.toggleFavorite = toggleFavorite;
 });
 

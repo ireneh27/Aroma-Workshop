@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="我的配方库 - 收藏和最近使用的配方">
+    <meta name="description" content="我的配方库 - 最近使用的配方">
     <title>我的配方库 - 个性化芳疗方案</title>
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -163,16 +163,6 @@
                 <!-- 统计卡片将由JavaScript动态生成 -->
             </div>
             
-            <!-- 收藏的配方 -->
-            <div id="favoritesSection">
-                <div class="section-header">
-                    <h2 class="section-title">❤️ 收藏的配方</h2>
-                </div>
-                <div id="favoritesContent">
-                    <!-- 内容将由JavaScript动态生成 -->
-                </div>
-            </div>
-            
             <!-- 最近查看 -->
             <div id="historySection" style="margin-top: 50px;">
                 <div class="section-header">
@@ -198,7 +188,7 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">🔒</div>
                         <h2>请先登录</h2>
-                        <p class="empty-state-text">登录后可以收藏配方、查看使用历史，享受个性化体验。</p>
+                        <p class="empty-state-text">登录后可以查看使用历史，享受个性化体验。</p>
                         <a href="login.html" class="btn btn-primary">立即登录</a>
                     </div>
                 `;
@@ -216,10 +206,6 @@
             
             statsSection.innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-value">${stats.totalFavorites}</div>
-                    <div class="stat-label">收藏的配方</div>
-                </div>
-                <div class="stat-card">
                     <div class="stat-value">${stats.totalHistory}</div>
                     <div class="stat-label">最近查看</div>
                 </div>
@@ -233,45 +219,6 @@
                 </div>
             `;
             statsSection.style.display = 'grid';
-        }
-        
-        // 渲染收藏的配方
-        function renderFavorites() {
-            if (typeof window.authSystem === 'undefined' || typeof FORMULA_DATABASE === 'undefined') return;
-            
-            const favorites = window.authSystem.getUserFavorites();
-            const favoritesContent = document.getElementById('favoritesContent');
-            
-            if (favorites.length === 0) {
-                favoritesContent.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🤍</div>
-                        <h3>还没有收藏的配方</h3>
-                        <p class="empty-state-text">在配方详情页点击"收藏"按钮，将喜欢的配方添加到收藏夹。</p>
-                        <a href="formula-library.html" class="btn btn-primary">浏览配方库</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            const formulas = favorites.map(id => FORMULA_DATABASE[id]).filter(f => f);
-            
-            if (formulas.length === 0) {
-                favoritesContent.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">⚠️</div>
-                        <h3>部分收藏的配方已不存在</h3>
-                        <p class="empty-state-text">某些配方可能已被移除或更新。</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            favoritesContent.innerHTML = `
-                <div class="formulas-grid">
-                    ${formulas.map(formula => renderFormulaCard(formula, true)).join('')}
-                </div>
-            `;
         }
         
         // 渲染使用历史
@@ -320,13 +267,13 @@
             
             historyContent.innerHTML = `
                 <div class="formulas-grid">
-                    ${formulas.map(formula => renderFormulaCard(formula, false)).join('')}
+                    ${formulas.map(formula => renderFormulaCard(formula)).join('')}
                 </div>
             `;
         }
         
         // 渲染单个配方卡片
-        function renderFormulaCard(formula, isFavorite) {
+        function renderFormulaCard(formula) {
             const baseType = getFormulaBaseType(formula);
             const baseTypeMap = {
                 'handcream': '护手霜',
@@ -341,7 +288,6 @@
                 <a href="formula-detail.html?id=${formula.id}" class="formula-card">
                     <div class="formula-card-header">
                         <div class="formula-card-name">${formula.name || '未命名配方'}</div>
-                        ${isFavorite ? '<span style="color: #ff6b6b; font-size: 20px;">❤️</span>' : ''}
                     </div>
                     <div class="formula-card-subtitle">${formula.subtitle || ''}</div>
                     <div class="formula-card-footer">
@@ -386,7 +332,6 @@
             if (!checkLogin()) return;
             
             renderStats();
-            renderFavorites();
             renderHistory();
         });
         

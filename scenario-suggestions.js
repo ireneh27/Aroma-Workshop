@@ -1278,6 +1278,120 @@ function waitForDependencies(callback, maxWaitTime = 3000) {
     }, checkInterval);
 }
 
+// 渲染快速概览
+function renderQuickOverview(scenarios) {
+    const quickOverview = document.getElementById('quickOverview');
+    const overviewContent = document.getElementById('overviewContent');
+    
+    if (!quickOverview || !overviewContent || !scenarios || !scenarios.scenarios) {
+        return;
+    }
+    
+    // 计算统计数据
+    let totalFormulas = 0;
+    let totalTimePoints = 0;
+    const uniqueFormulas = new Set();
+    const timePoints = new Set();
+    
+    scenarios.scenarios.forEach(scenario => {
+        if (scenario.timeline && Array.isArray(scenario.timeline)) {
+            scenario.timeline.forEach(item => {
+                if (item.time) {
+                    timePoints.add(item.time);
+                }
+                if (item.formulas && Array.isArray(item.formulas)) {
+                    item.formulas.forEach(formulaData => {
+                        if (formulaData.formulaId) {
+                            uniqueFormulas.add(formulaData.formulaId);
+                            totalFormulas++;
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
+    totalTimePoints = timePoints.size;
+    const uniqueFormulaCount = uniqueFormulas.size;
+    
+    // 生成概览HTML
+    overviewContent.innerHTML = `
+        <div class="overview-item">
+            <div class="overview-value">${scenarios.scenarios.length}</div>
+            <div class="overview-label">场景数量</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${totalTimePoints}</div>
+            <div class="overview-label">时间点</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${uniqueFormulaCount}</div>
+            <div class="overview-label">配方种类</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${totalFormulas}</div>
+            <div class="overview-label">配方总数</div>
+        </div>
+    `;
+    
+    // 显示快速概览
+    quickOverview.style.display = 'block';
+}
+
+// 检查并显示首次使用引导
+function checkAndShowOnboarding() {
+    const onboardingKey = 'scenario-suggestions-onboarding-shown';
+    const hasSeenOnboarding = localStorage.getItem(onboardingKey);
+    
+    if (!hasSeenOnboarding) {
+        const overlay = document.getElementById('onboardingOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    }
+}
+
+// 关闭首次使用引导
+window.closeOnboarding = function(dontShowAgain = false) {
+    const overlay = document.getElementById('onboardingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    
+    if (dontShowAgain) {
+        localStorage.setItem('scenario-suggestions-onboarding-shown', 'true');
+    }
+};
+
+// 切换视图模式
+window.switchViewMode = function(mode) {
+    const layout = document.querySelector('.scenarios-layout');
+    const buttons = document.querySelectorAll('.view-mode-btn');
+    
+    if (!layout) return;
+    
+    // 更新按钮状态
+    buttons.forEach(btn => {
+        if (btn.getAttribute('data-mode') === mode) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // 移除所有视图类
+    layout.classList.remove('detailed-view', 'compact-view', 'compare-view');
+    
+    // 添加新的视图类
+    if (mode === 'detailed') {
+        layout.classList.add('detailed-view');
+    } else if (mode === 'compact') {
+        layout.classList.add('compact-view');
+    } else if (mode === 'compare') {
+        layout.classList.add('compare-view');
+    }
+};
+
 // 页面加载时执行（优化：使用更高效的加载策略）
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
