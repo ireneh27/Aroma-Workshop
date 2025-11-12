@@ -703,11 +703,13 @@
     <script src="common.js"></script>
     <script src="formula-suggestions.js"></script>
     <script src="questionnaire.js"></script>
+    <!-- AI服务：必须在scenario-suggestions.js之前加载 -->
+    <script src="ai-service.js"></script>
     <!-- 次要依赖：异步加载 -->
     <script src="auth.js" defer></script>
     <script src="auth-nav.js" defer></script>
     <script src="daily-usage-validator.js" defer></script>
-    <script src="ai-service.js" defer></script>
+    <!-- 场景建议脚本：依赖ai-service.js -->
     <script src="scenario-suggestions.js" defer></script>
 </body>
 </html>

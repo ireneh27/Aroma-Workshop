@@ -1026,6 +1026,7 @@ async function loadScenarioSuggestions() {
     
     // 检查AI是否可用
     updateLoadingMessage('正在准备AI服务...');
+    const generateScenarioSuggestions = window.generateScenarioSuggestions;
     if (typeof generateScenarioSuggestions === 'undefined') {
         showError('AI功能未启用，无法生成场景建议');
         return;
@@ -1080,6 +1081,12 @@ async function loadScenarioSuggestions() {
         updateLoadingMessage('正在生成个性化场景建议...');
         showLoading('正在生成个性化场景建议...', 30);
         console.log('Calling generateScenarioSuggestions with data:', questionnaireData);
+        
+        // 获取 generateScenarioSuggestions 函数
+        const generateScenarioSuggestions = window.generateScenarioSuggestions;
+        if (!generateScenarioSuggestions) {
+            throw new Error('generateScenarioSuggestions function not available');
+        }
         
         // 模拟进度更新（实际进度由AI调用决定）
         const progressInterval = setInterval(() => {
@@ -1203,9 +1210,9 @@ async function loadScenarioSuggestions() {
 }
 
 // 等待依赖加载完成（优化版：减少等待时间，提前显示内容）
-function waitForDependencies(callback, maxWaitTime = 3000) {
+function waitForDependencies(callback, maxWaitTime = 5000) {
     const startTime = Date.now();
-    const checkInterval = 30; // 进一步减少检查间隔到30ms
+    const checkInterval = 50; // 检查间隔50ms
     
     // 先检查基本依赖（FORMULA_DATABASE和getQuestionnaireData），这些通常加载较快
     const checkBasicDependencies = setInterval(() => {
@@ -1225,7 +1232,7 @@ function waitForDependencies(callback, maxWaitTime = 3000) {
             const maxAIChecks = Math.floor((maxWaitTime - (Date.now() - startTime)) / checkInterval);
             const checkAIDependencies = setInterval(() => {
                 const elapsed = Date.now() - startTime;
-                const allReady = typeof generateScenarioSuggestions !== 'undefined';
+                const allReady = typeof window.generateScenarioSuggestions !== 'undefined';
                 
                 if (allReady) {
                     clearInterval(checkAIDependencies);
@@ -1235,7 +1242,7 @@ function waitForDependencies(callback, maxWaitTime = 3000) {
                     clearInterval(checkAIDependencies);
                     // 即使AI未加载，也尝试继续（可能使用备用方案）
                     console.warn('AI dependencies not loaded, attempting to continue...');
-                    if (typeof generateScenarioSuggestions === 'undefined') {
+                    if (typeof window.generateScenarioSuggestions === 'undefined') {
                         const container = document.getElementById('scenariosContainer');
                         if (container) {
                             container.innerHTML = `
@@ -1266,7 +1273,7 @@ function waitForDependencies(callback, maxWaitTime = 3000) {
                         <p style="font-size: 12px; color: #666; margin-top: 10px;">
                             FORMULA_DATABASE: ${typeof FORMULA_DATABASE !== 'undefined' ? '已加载' : '未加载'}<br>
                             getQuestionnaireData: ${typeof getQuestionnaireData !== 'undefined' ? '已加载' : '未加载'}<br>
-                            generateScenarioSuggestions: ${typeof generateScenarioSuggestions !== 'undefined' ? '已加载' : '未加载'}
+                            generateScenarioSuggestions: ${typeof window.generateScenarioSuggestions !== 'undefined' ? '已加载' : '未加载'}
                         </p>
                         <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 15px; padding: 10px 20px; border: none; border-radius: 6px; background: var(--accent-gradient); color: white; cursor: pointer;">
                             刷新页面
@@ -1393,14 +1400,20 @@ window.switchViewMode = function(mode) {
 };
 
 // 页面加载时执行（优化：使用更高效的加载策略）
+function initScenarioSuggestions() {
+    console.log('Initializing scenario suggestions...');
+    console.log('FORMULA_DATABASE:', typeof FORMULA_DATABASE !== 'undefined' ? 'loaded' : 'not loaded');
+    console.log('getQuestionnaireData:', typeof getQuestionnaireData !== 'undefined' ? 'loaded' : 'not loaded');
+    console.log('generateScenarioSuggestions:', typeof window.generateScenarioSuggestions !== 'undefined' ? 'loaded' : 'not loaded');
+    
+    waitForDependencies(loadScenarioSuggestions);
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOMContentLoaded, waiting for dependencies...');
-        waitForDependencies(loadScenarioSuggestions);
-    });
+    document.addEventListener('DOMContentLoaded', initScenarioSuggestions);
 } else {
     // DOM已经加载完成，直接执行
-    console.log('DOM already loaded, waiting for dependencies...');
-    waitForDependencies(loadScenarioSuggestions);
+    // 使用 setTimeout 确保所有脚本都已执行
+    setTimeout(initScenarioSuggestions, 100);
 }
 
