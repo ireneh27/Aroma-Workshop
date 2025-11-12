@@ -43,19 +43,87 @@ const AI_CONFIG = {
     
     // 是否启用缓存 (减少API调用)
     enableCache: true,
-    cacheExpiry: 24 * 60 * 60 * 1000 // 24小时
+    cacheExpiry: 24 * 60 * 60 * 1000, // 24小时
+    
+    // 性能优化配置
+    timeout: 30000, // 请求超时时间（30秒）
+    maxRetries: 3, // 最大重试次数
+    retryDelay: 1000, // 初始重试延迟（毫秒）
+    maxConcurrent: 3, // 最大并发请求数
+    useLocalStorage: true // 使用localStorage持久化缓存
 };
 
-// 缓存系统
+// 缓存系统（内存 + localStorage）
 const aiCache = new Map();
+const CACHE_STORAGE_KEY = 'ai_cache';
+
+// 从localStorage加载缓存
+function loadCacheFromStorage() {
+    if (!AI_CONFIG.useLocalStorage || typeof localStorage === 'undefined') return;
+    try {
+        const stored = localStorage.getItem(CACHE_STORAGE_KEY);
+        if (stored) {
+            const cacheData = JSON.parse(stored);
+            const now = Date.now();
+            Object.entries(cacheData).forEach(([key, value]) => {
+                if (value.timestamp && now - value.timestamp < AI_CONFIG.cacheExpiry) {
+                    aiCache.set(key, value);
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('Failed to load cache from localStorage:', e);
+    }
+}
+
+// 保存缓存到localStorage
+function saveCacheToStorage() {
+    if (!AI_CONFIG.useLocalStorage || typeof localStorage === 'undefined') return;
+    try {
+        const cacheData = {};
+        aiCache.forEach((value, key) => {
+            cacheData[key] = value;
+        });
+        localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(cacheData));
+    } catch (e) {
+        console.warn('Failed to save cache to localStorage:', e);
+    }
+}
+
+// 初始化：从localStorage加载缓存
+if (typeof window !== 'undefined') {
+    loadCacheFromStorage();
+}
 
 // 获取缓存的响应
 function getCachedResponse(key) {
     if (!AI_CONFIG.enableCache) return null;
+    
+    // 先检查内存缓存
     const cached = aiCache.get(key);
     if (cached && Date.now() - cached.timestamp < AI_CONFIG.cacheExpiry) {
         return cached.data;
     }
+    
+    // 如果内存中没有，从localStorage加载
+    if (AI_CONFIG.useLocalStorage && typeof localStorage !== 'undefined') {
+        try {
+            const stored = localStorage.getItem(CACHE_STORAGE_KEY);
+            if (stored) {
+                const cacheData = JSON.parse(stored);
+                const cached = cacheData[key];
+                if (cached && Date.now() - cached.timestamp < AI_CONFIG.cacheExpiry) {
+                    // 恢复到内存缓存
+                    aiCache.set(key, cached);
+                    return cached.data;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to read from localStorage:', e);
+        }
+    }
+    
+    // 清理过期缓存
     aiCache.delete(key);
     return null;
 }
@@ -63,12 +131,100 @@ function getCachedResponse(key) {
 // 保存响应到缓存
 function setCachedResponse(key, data) {
     if (!AI_CONFIG.enableCache) return;
-    aiCache.set(key, { data, timestamp: Date.now() });
+    const cacheEntry = { data, timestamp: Date.now() };
+    aiCache.set(key, cacheEntry);
+    
+    // 异步保存到localStorage（避免阻塞）
+    if (AI_CONFIG.useLocalStorage && typeof localStorage !== 'undefined') {
+        setTimeout(() => {
+            try {
+                saveCacheToStorage();
+            } catch (e) {
+                console.warn('Failed to save cache:', e);
+            }
+        }, 0);
+    }
 }
 
 // 生成缓存键
 function generateCacheKey(prompt, context) {
     return JSON.stringify({ prompt, context });
+}
+
+// 请求去重系统
+const pendingRequests = new Map();
+
+// 请求队列和并发控制
+const requestQueue = [];
+let activeRequests = 0;
+
+// 处理队列中的请求
+async function processQueue() {
+    if (activeRequests >= AI_CONFIG.maxConcurrent || requestQueue.length === 0) {
+        return;
+    }
+    
+    const { resolve, reject, requestFn } = requestQueue.shift();
+    activeRequests++;
+    
+    try {
+        const result = await requestFn();
+        resolve(result);
+    } catch (error) {
+        reject(error);
+    } finally {
+        activeRequests--;
+        // 继续处理队列
+        processQueue();
+    }
+}
+
+// 带超时的fetch
+async function fetchWithTimeout(url, options, timeout = AI_CONFIG.timeout) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('请求超时');
+        }
+        throw error;
+    }
+}
+
+// 带重试的API调用
+async function callAPIWithRetry(apiCallFn, maxRetries = AI_CONFIG.maxRetries) {
+    let lastError;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await apiCallFn();
+        } catch (error) {
+            lastError = error;
+            // 如果是权限错误或登录错误，不重试
+            if (error.message === 'AI_QUERY_REQUIRES_LOGIN' || 
+                error.message === 'AI_QUERY_LIMIT_EXCEEDED') {
+                throw error;
+            }
+            
+            // 最后一次尝试失败，抛出错误
+            if (i === maxRetries - 1) {
+                throw error;
+            }
+            
+            // 指数退避：1s, 2s, 4s
+            const delay = AI_CONFIG.retryDelay * Math.pow(2, i);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    throw lastError;
 }
 
 // 调用OpenAI API
@@ -78,7 +234,7 @@ async function callOpenAI(messages, options = {}) {
         throw new Error('OpenAI API Key未配置');
     }
     
-    const response = await fetch(`${config.baseURL}/chat/completions`, {
+    const response = await fetchWithTimeout(`${config.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -90,10 +246,10 @@ async function callOpenAI(messages, options = {}) {
             temperature: options.temperature || config.temperature,
             max_tokens: options.maxTokens || config.maxTokens
         })
-    });
+    }, options.timeout || AI_CONFIG.timeout);
     
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
         throw new Error(`OpenAI API错误: ${error.error?.message || response.statusText}`);
     }
     
@@ -113,7 +269,7 @@ async function callAnthropic(messages, options = {}) {
     const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
     const userContent = userMessages.join('\n\n');
     
-    const response = await fetch(`${config.baseURL}/messages`, {
+    const response = await fetchWithTimeout(`${config.baseURL}/messages`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -129,10 +285,10 @@ async function callAnthropic(messages, options = {}) {
                 content: userContent
             }]
         })
-    });
+    }, options.timeout || AI_CONFIG.timeout);
     
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
         throw new Error(`Anthropic API错误: ${error.error?.message || response.statusText}`);
     }
     
@@ -147,7 +303,7 @@ async function callDeepSeek(messages, options = {}) {
         throw new Error('DeepSeek API Key未配置');
     }
     
-    const response = await fetch(`${config.baseURL}/chat/completions`, {
+    const response = await fetchWithTimeout(`${config.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -159,7 +315,7 @@ async function callDeepSeek(messages, options = {}) {
             temperature: options.temperature || config.temperature,
             max_tokens: options.maxTokens || config.maxTokens
         })
-    });
+    }, options.timeout || AI_CONFIG.timeout);
     
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
@@ -177,7 +333,7 @@ async function callCustomAPI(messages, options = {}) {
         throw new Error('自定义API配置不完整');
     }
     
-    const response = await fetch(`${config.baseURL}/chat/completions`, {
+    const response = await fetchWithTimeout(`${config.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -189,10 +345,10 @@ async function callCustomAPI(messages, options = {}) {
             temperature: options.temperature || config.temperature,
             max_tokens: options.maxTokens || config.maxTokens
         })
-    });
+    }, options.timeout || AI_CONFIG.timeout);
     
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
         throw new Error(`API错误: ${error.error?.message || response.statusText}`);
     }
     
@@ -200,7 +356,7 @@ async function callCustomAPI(messages, options = {}) {
     return data.choices[0].message.content;
 }
 
-// 通用AI调用函数（带用户权限检查）
+// 通用AI调用函数（带用户权限检查、请求去重、队列和重试）
 async function callAI(messages, options = {}) {
     // 检查是否启用AI
     if (AI_CONFIG.provider === 'none') {
@@ -214,57 +370,94 @@ async function callAI(messages, options = {}) {
         return cached;
     }
     
-    // 检查用户登录和剩余查询次数（仅在需要调用API时检查）
-    if (typeof window !== 'undefined' && window.authSystem) {
-        if (!window.authSystem.isUserLoggedIn()) {
-            throw new Error('AI_QUERY_REQUIRES_LOGIN');
-        }
-        
-        if (!window.authSystem.canUseAIInquiry()) {
-            throw new Error('AI_QUERY_LIMIT_EXCEEDED');
-        }
+    // 请求去重：如果相同的请求正在进行，等待它完成
+    if (pendingRequests.has(cacheKey)) {
+        return await pendingRequests.get(cacheKey);
     }
     
-    try {
-        let response;
-        
-        switch (AI_CONFIG.provider) {
-            case 'openai':
-                response = await callOpenAI(messages, options);
-                break;
-            case 'anthropic':
-                response = await callAnthropic(messages, options);
-                break;
-            case 'deepseek':
-                response = await callDeepSeek(messages, options);
-                break;
-            case 'custom':
-                response = await callCustomAPI(messages, options);
-                break;
-            default:
-                return null;
-        }
-        
-        // 使用一次AI查询（仅在成功调用API后）
-        if (typeof window !== 'undefined' && window.authSystem && response) {
-            const inquiryResult = window.authSystem.useAIInquiry();
-            if (!inquiryResult.success) {
-                // 这种情况理论上不应该发生（因为前面已经检查过），但作为安全措施
-                console.warn('AI查询次数已用完');
-                return null;
+    // 创建请求Promise
+    const requestPromise = new Promise((resolve, reject) => {
+        // 将请求加入队列
+        requestQueue.push({
+            resolve,
+            reject,
+            requestFn: async () => {
+                try {
+                    // 检查用户登录和剩余查询次数（仅在需要调用API时检查）
+                    if (typeof window !== 'undefined' && window.authSystem) {
+                        if (!window.authSystem.isUserLoggedIn()) {
+                            throw new Error('AI_QUERY_REQUIRES_LOGIN');
+                        }
+                        
+                        if (!window.authSystem.canUseAIInquiry()) {
+                            throw new Error('AI_QUERY_LIMIT_EXCEEDED');
+                        }
+                    }
+                    
+                    // 使用重试机制调用API
+                    const response = await callAPIWithRetry(async () => {
+                        let result;
+                        switch (AI_CONFIG.provider) {
+                            case 'openai':
+                                result = await callOpenAI(messages, options);
+                                break;
+                            case 'anthropic':
+                                result = await callAnthropic(messages, options);
+                                break;
+                            case 'deepseek':
+                                result = await callDeepSeek(messages, options);
+                                break;
+                            case 'custom':
+                                result = await callCustomAPI(messages, options);
+                                break;
+                            default:
+                                return null;
+                        }
+                        return result;
+                    });
+                    
+                    // 使用一次AI查询（仅在成功调用API后）
+                    if (typeof window !== 'undefined' && window.authSystem && response) {
+                        const inquiryResult = window.authSystem.useAIInquiry();
+                        if (!inquiryResult.success) {
+                            // 这种情况理论上不应该发生（因为前面已经检查过），但作为安全措施
+                            console.warn('AI查询次数已用完');
+                            return null;
+                        }
+                    }
+                    
+                    // 保存到缓存
+                    if (response) {
+                        setCachedResponse(cacheKey, response);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('AI API调用失败:', error);
+                    // 如果是权限错误，直接抛出
+                    if (error.message === 'AI_QUERY_REQUIRES_LOGIN' || 
+                        error.message === 'AI_QUERY_LIMIT_EXCEEDED') {
+                        throw error;
+                    }
+                    // 其他错误返回null，让系统回退到规则匹配
+                    return null;
+                }
             }
-        }
+        });
         
-        // 保存到缓存
-        if (response) {
-            setCachedResponse(cacheKey, response);
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('AI API调用失败:', error);
-        // 返回null，让系统回退到规则匹配
-        return null;
+        // 处理队列
+        processQueue();
+    });
+    
+    // 将请求加入去重Map
+    pendingRequests.set(cacheKey, requestPromise);
+    
+    try {
+        const result = await requestPromise;
+        return result;
+    } finally {
+        // 请求完成后从去重Map中移除
+        pendingRequests.delete(cacheKey);
     }
 }
 
@@ -367,6 +560,98 @@ async function generateAISuggestionText(questionnaireData, formula) {
     ];
     
     return await callAI(messages, { maxTokens: 150 });
+}
+
+// 批量生成AI增强的建议文本（优化：一次API调用生成多个配方的推荐理由）
+async function generateAISuggestionTextBatch(questionnaireData, formulas) {
+    if (!questionnaireData || !formulas || formulas.length === 0 || AI_CONFIG.provider === 'none') {
+        return {};
+    }
+    
+    // 构建症状描述
+    const symptoms = [];
+    if (questionnaireData.circulation && questionnaireData.circulation.includes('cold-feet')) {
+        symptoms.push('手脚冰凉');
+    }
+    if (questionnaireData.sleep && questionnaireData.sleep.includes('poor')) {
+        symptoms.push('睡眠质量差');
+    }
+    if (questionnaireData.digestive && questionnaireData.digestive.includes('burp')) {
+        symptoms.push('打嗝');
+    }
+    if (questionnaireData.digestive && questionnaireData.digestive.includes('bloating')) {
+        symptoms.push('腹胀');
+    }
+    
+    // 构建配方列表
+    const formulaList = formulas.map((formula, index) => {
+        return `配方${index + 1}:
+- ID: ${formula.id}
+- 名称: ${formula.name}
+- 说明: ${formula.subtitle}
+- 作用原理: ${formula.principle || '未提供'}`;
+    }).join('\n\n');
+    
+    const systemPrompt = `你是一位专业的芳疗师。请为以下多个配方分别生成简洁、专业但友好的推荐理由。
+
+用户症状: ${symptoms.join('、') || '未明确'}
+
+请为每个配方生成1-2句话的推荐理由，说明为什么这个配方适合用户，语气要专业但温暖。
+
+请以JSON格式返回，格式如下：
+{
+  "formulaId1": "推荐理由1",
+  "formulaId2": "推荐理由2",
+  ...
+}
+
+每个推荐理由应该：
+1. 简洁明了（1-2句话）
+2. 结合用户症状说明为什么适合
+3. 语气专业但温暖`;
+
+    const userPrompt = `请为以下配方生成推荐理由：
+
+${formulaList}
+
+请返回JSON格式，键为配方ID，值为推荐理由。`;
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+    ];
+    
+    try {
+        const response = await callAI(messages, { maxTokens: formulas.length * 100 });
+        if (!response) {
+            return {};
+        }
+        
+        // 尝试解析JSON响应
+        let jsonResponse;
+        try {
+            let cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            jsonResponse = JSON.parse(cleanedResponse);
+        } catch (e) {
+            // 如果解析失败，尝试提取JSON部分
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try {
+                    jsonResponse = JSON.parse(jsonMatch[0]);
+                } catch (e2) {
+                    console.error('Failed to parse batch response:', e2);
+                    return {};
+                }
+            } else {
+                return {};
+            }
+        }
+        
+        return jsonResponse;
+    } catch (error) {
+        console.error('批量生成推荐理由失败:', error);
+        return {};
+    }
 }
 
 // 验证场景响应数据质量
@@ -857,6 +1142,7 @@ if (typeof module !== 'undefined' && module.exports) {
         AI_CONFIG,
         generateAIFormulaRecommendations,
         generateAISuggestionText,
+        generateAISuggestionTextBatch,
         askAIQuestion,
         callAI
     };
@@ -868,6 +1154,7 @@ if (typeof window !== 'undefined') {
     window.AI_CONFIG = AI_CONFIG;
     window.generateAIFormulaRecommendations = generateAIFormulaRecommendations;
     window.generateAISuggestionText = generateAISuggestionText;
+    window.generateAISuggestionTextBatch = generateAISuggestionTextBatch;
     window.askAIQuestion = askAIQuestion;
     window.generateScenarioSuggestions = generateScenarioSuggestions;
 }

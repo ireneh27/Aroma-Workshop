@@ -507,6 +507,66 @@ function renderScenarios(scenarios) {
     renderTimelineFirst(mergedTimeline, layoutDiv, scenarios);
 }
 
+// 渲染快速概览
+function renderQuickOverview(scenarios) {
+    const quickOverview = document.getElementById('quickOverview');
+    const overviewContent = document.getElementById('overviewContent');
+    
+    if (!quickOverview || !overviewContent || !scenarios || !scenarios.scenarios) {
+        return;
+    }
+    
+    // 计算统计数据
+    let totalFormulas = 0;
+    let totalTimePoints = 0;
+    const uniqueFormulas = new Set();
+    const timePoints = new Set();
+    
+    scenarios.scenarios.forEach(scenario => {
+        if (scenario.timeline && Array.isArray(scenario.timeline)) {
+            scenario.timeline.forEach(item => {
+                if (item.time) {
+                    timePoints.add(item.time);
+                }
+                if (item.formulas && Array.isArray(item.formulas)) {
+                    item.formulas.forEach(formulaData => {
+                        if (formulaData.formulaId) {
+                            uniqueFormulas.add(formulaData.formulaId);
+                            totalFormulas++;
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
+    totalTimePoints = timePoints.size;
+    const uniqueFormulaCount = uniqueFormulas.size;
+    
+    // 生成概览HTML
+    overviewContent.innerHTML = `
+        <div class="overview-item">
+            <div class="overview-value">${scenarios.scenarios.length}</div>
+            <div class="overview-label">场景数量</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${totalTimePoints}</div>
+            <div class="overview-label">时间点</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${uniqueFormulaCount}</div>
+            <div class="overview-label">配方种类</div>
+        </div>
+        <div class="overview-item">
+            <div class="overview-value">${totalFormulas}</div>
+            <div class="overview-label">配方总数</div>
+        </div>
+    `;
+    
+    // 显示快速概览
+    quickOverview.style.display = 'block';
+}
+
 // 先渲染时间轴（快速显示）
 function renderTimelineFirst(mergedTimeline, layoutDiv, scenarios) {
     // 渲染中间时间轴
@@ -1283,66 +1343,6 @@ function waitForDependencies(callback, maxWaitTime = 5000) {
             }
         }
     }, checkInterval);
-}
-
-// 渲染快速概览
-function renderQuickOverview(scenarios) {
-    const quickOverview = document.getElementById('quickOverview');
-    const overviewContent = document.getElementById('overviewContent');
-    
-    if (!quickOverview || !overviewContent || !scenarios || !scenarios.scenarios) {
-        return;
-    }
-    
-    // 计算统计数据
-    let totalFormulas = 0;
-    let totalTimePoints = 0;
-    const uniqueFormulas = new Set();
-    const timePoints = new Set();
-    
-    scenarios.scenarios.forEach(scenario => {
-        if (scenario.timeline && Array.isArray(scenario.timeline)) {
-            scenario.timeline.forEach(item => {
-                if (item.time) {
-                    timePoints.add(item.time);
-                }
-                if (item.formulas && Array.isArray(item.formulas)) {
-                    item.formulas.forEach(formulaData => {
-                        if (formulaData.formulaId) {
-                            uniqueFormulas.add(formulaData.formulaId);
-                            totalFormulas++;
-                        }
-                    });
-                }
-            });
-        }
-    });
-    
-    totalTimePoints = timePoints.size;
-    const uniqueFormulaCount = uniqueFormulas.size;
-    
-    // 生成概览HTML
-    overviewContent.innerHTML = `
-        <div class="overview-item">
-            <div class="overview-value">${scenarios.scenarios.length}</div>
-            <div class="overview-label">场景数量</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${totalTimePoints}</div>
-            <div class="overview-label">时间点</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${uniqueFormulaCount}</div>
-            <div class="overview-label">配方种类</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${totalFormulas}</div>
-            <div class="overview-label">配方总数</div>
-        </div>
-    `;
-    
-    // 显示快速概览
-    quickOverview.style.display = 'block';
 }
 
 // 检查并显示首次使用引导
