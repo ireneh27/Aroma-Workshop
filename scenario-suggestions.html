@@ -699,7 +699,7 @@
         </div>
     </main>
 
-    <!-- 关键依赖：优先加载 -->
+    <!-- 关键依赖：优先加载（同步加载，确保顺序） -->
     <script src="common.js"></script>
     <script src="formula-suggestions.js"></script>
     <script src="questionnaire.js"></script>
@@ -709,7 +709,7 @@
     <script src="auth.js" defer></script>
     <script src="auth-nav.js" defer></script>
     <script src="daily-usage-validator.js" defer></script>
-    <!-- 场景建议脚本：依赖ai-service.js -->
+    <!-- 场景建议脚本：依赖ai-service.js（使用defer确保DOM加载完成后再执行） -->
     <script src="scenario-suggestions.js" defer></script>
 </body>
 </html>
