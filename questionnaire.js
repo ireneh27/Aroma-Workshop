@@ -60,6 +60,23 @@ function saveQuestionnaire() {
         return;
     }
     
+    // 检查是否可以创建/保存信息档案（免费用户只能保存1个）
+    if (typeof window.authSystem !== 'undefined' && window.authSystem.canCreateProfile) {
+        const canCreate = window.authSystem.canCreateProfile();
+        if (!canCreate) {
+            const limits = window.authSystem.getUserLimits();
+            const isPremium = window.authSystem.isPremiumMember();
+            if (!isPremium) {
+                showQuestionnaireMessage(`免费用户只能保存${limits.maxProfiles}个信息档案。升级为付费会员可保存多个档案。`, 'error');
+                // 可以选择跳转到支付页面
+                if (confirm('是否升级为付费会员以保存多个信息档案？')) {
+                    window.location.href = 'payment.html?type=premium';
+                }
+                return;
+            }
+        }
+    }
+    
     const formData = new FormData(form);
     const data = {
         timestamp: new Date().toISOString(),

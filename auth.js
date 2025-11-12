@@ -7,6 +7,26 @@ const AI_INQUIRY_LIMIT = 3; // 每个注册用户3次免费AI查询
 const AI_PURCHASE_PRICE = 5; // 购买10次AI查询的价格（元）
 const AI_PURCHASE_AMOUNT = 10; // 每次购买获得的AI查询次数
 
+// 会员类型常量
+const MEMBERSHIP_TYPE = {
+    FREE: 'free',      // 免费用户
+    PREMIUM: 'premium' // 付费会员
+};
+
+// 用户权限限制
+const USER_LIMITS = {
+    [MEMBERSHIP_TYPE.FREE]: {
+        maxProfiles: 1,        // 最多1个信息档案
+        maxRecipes: 10,        // 最多10个配方
+        aiInquiriesLimit: 3    // 3次免费AI查询
+    },
+    [MEMBERSHIP_TYPE.PREMIUM]: {
+        maxProfiles: Infinity, // 无限信息档案
+        maxRecipes: Infinity,  // 无限配方
+        aiInquiriesLimit: 30   // 30次AI查询（赠送）
+    }
+};
+
 // 初始化用户存储
 function initUserStorage() {
     if (!localStorage.getItem(AUTH_STORAGE_KEY)) {
@@ -47,8 +67,9 @@ function registerUser(email, password, name = '') {
         password: password, // 注意：实际应用中应该加密存储
         name: name || email.split('@')[0],
         registeredAt: new Date().toISOString(),
+        membershipType: MEMBERSHIP_TYPE.FREE, // 默认免费用户
         aiInquiriesUsed: 0,
-        aiInquiriesLimit: AI_INQUIRY_LIMIT,
+        aiInquiriesLimit: USER_LIMITS[MEMBERSHIP_TYPE.FREE].aiInquiriesLimit,
         lastLogin: new Date().toISOString(),
         loginType: 'email', // 'email' 或 'wechat'
         wechatOpenId: null,
@@ -302,8 +323,9 @@ function handleWeChatCallback(code, state) {
                         email: email,
                         name: mockWeChatUser.nickname,
                         registeredAt: new Date().toISOString(),
+                        membershipType: MEMBERSHIP_TYPE.FREE, // 默认免费用户
                         aiInquiriesUsed: 0,
-                        aiInquiriesLimit: AI_INQUIRY_LIMIT,
+                        aiInquiriesLimit: USER_LIMITS[MEMBERSHIP_TYPE.FREE].aiInquiriesLimit,
                         lastLogin: new Date().toISOString(),
                         loginType: 'wechat',
                         wechatOpenId: mockWeChatUser.openId,
@@ -512,6 +534,112 @@ function getUserStatistics() {
     };
 }
 
+// 检查用户会员类型
+function getUserMembershipType() {
+    const user = getCurrentUser();
+    if (!user) return MEMBERSHIP_TYPE.FREE;
+    return user.membershipType || MEMBERSHIP_TYPE.FREE;
+}
+
+// 检查用户是否为付费会员
+function isPremiumMember() {
+    return getUserMembershipType() === MEMBERSHIP_TYPE.PREMIUM;
+}
+
+// 获取用户权限限制
+function getUserLimits() {
+    const membershipType = getUserMembershipType();
+    return USER_LIMITS[membershipType] || USER_LIMITS[MEMBERSHIP_TYPE.FREE];
+}
+
+// 检查是否可以创建新的信息档案
+function canCreateProfile() {
+    const limits = getUserLimits();
+    if (limits.maxProfiles === Infinity) return true;
+    
+    // 统计当前用户的信息档案数量
+    const user = getCurrentUser();
+    if (!user) return false;
+    
+    const profileKey = `user_questionnaire_${user.id}`;
+    // 检查是否有已保存的档案
+    const existingProfile = localStorage.getItem(profileKey);
+    if (existingProfile) {
+        return limits.maxProfiles > 1; // 如果已有1个，且限制是1，则不能再创建
+    }
+    
+    return true;
+}
+
+// 检查是否可以创建新配方
+function canCreateRecipe() {
+    const limits = getUserLimits();
+    if (limits.maxRecipes === Infinity) return true;
+    
+    // 统计当前用户的配方数量
+    let recipeCount = 0;
+    if (typeof UnifiedDataManager !== 'undefined') {
+        const allRecipes = UnifiedDataManager.getAllRecipes();
+        const user = getCurrentUser();
+        if (user) {
+            recipeCount = allRecipes.filter(r => r.userId === user.id).length;
+        }
+    } else if (typeof RecipeDB !== 'undefined') {
+        const allRecipes = RecipeDB.loadRecipes();
+        recipeCount = allRecipes.length; // 简化：统计所有配方
+    }
+    
+    return recipeCount < limits.maxRecipes;
+}
+
+// 获取当前用户的配方数量
+function getUserRecipeCount() {
+    let recipeCount = 0;
+    if (typeof UnifiedDataManager !== 'undefined') {
+        const allRecipes = UnifiedDataManager.getAllRecipes();
+        const user = getCurrentUser();
+        if (user) {
+            recipeCount = allRecipes.filter(r => r.userId === user.id).length;
+        }
+    } else if (typeof RecipeDB !== 'undefined') {
+        const allRecipes = RecipeDB.loadRecipes();
+        recipeCount = allRecipes.length;
+    }
+    return recipeCount;
+}
+
+// 升级为付费会员（处理支付成功回调）
+function upgradeToPremium(orderId) {
+    const user = getCurrentUser();
+    if (!user) {
+        return {
+            success: false,
+            message: '用户未登录'
+        };
+    }
+    
+    const users = getAllUsers();
+    users[user.email].membershipType = MEMBERSHIP_TYPE.PREMIUM;
+    users[user.email].aiInquiriesLimit = USER_LIMITS[MEMBERSHIP_TYPE.PREMIUM].aiInquiriesLimit;
+    users[user.email].aiInquiriesUsed = 0; // 重置使用次数
+    
+    // 记录购买历史
+    users[user.email].purchaseHistory.push({
+        orderId: orderId,
+        type: 'premium_membership',
+        purchaseTime: new Date().toISOString()
+    });
+    
+    saveAllUsers(users);
+    setCurrentUser(user.email);
+    
+    return {
+        success: true,
+        message: '升级成功！您现在是付费会员，享受无限配方和30次AI查询',
+        user: users[user.email]
+    };
+}
+
 // 处理支付成功回调（在支付成功后调用）
 function handlePaymentSuccess(orderId, paymentType, amount) {
     const user = getCurrentUser();
@@ -520,6 +648,11 @@ function handlePaymentSuccess(orderId, paymentType, amount) {
             success: false,
             message: '用户未登录'
         };
+    }
+    
+    if (paymentType === 'premium') {
+        // 升级为付费会员
+        return upgradeToPremium(orderId);
     }
     
     if (paymentType === 'ai') {
@@ -579,6 +712,17 @@ if (typeof window !== 'undefined') {
         clearHistory,
         // 统计信息
         getUserStatistics,
+        // 会员功能
+        getUserMembershipType,
+        isPremiumMember,
+        getUserLimits,
+        canCreateProfile,
+        canCreateRecipe,
+        getUserRecipeCount,
+        upgradeToPremium,
+        // 常量
+        MEMBERSHIP_TYPE,
+        USER_LIMITS,
         AI_INQUIRY_LIMIT,
         AI_PURCHASE_PRICE,
         AI_PURCHASE_AMOUNT

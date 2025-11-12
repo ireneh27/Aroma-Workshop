@@ -862,3 +862,13 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
+// 导出到全局（供其他脚本使用）
+if (typeof window !== 'undefined') {
+    window.callAI = callAI;
+    window.AI_CONFIG = AI_CONFIG;
+    window.generateAIFormulaRecommendations = generateAIFormulaRecommendations;
+    window.generateAISuggestionText = generateAISuggestionText;
+    window.askAIQuestion = askAIQuestion;
+    window.generateScenarioSuggestions = generateScenarioSuggestions;
+}
+

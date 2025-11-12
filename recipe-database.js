@@ -532,6 +532,24 @@ function saveRecipe(e) {
         return;
     }
     
+    // 检查是否可以创建新配方（免费用户只能保存10个）
+    // 如果是编辑现有配方（editingId存在），则不需要检查
+    if (!editingId && typeof window.authSystem !== 'undefined' && window.authSystem.canCreateRecipe) {
+        const canCreate = window.authSystem.canCreateRecipe();
+        if (!canCreate) {
+            const limits = window.authSystem.getUserLimits();
+            const currentCount = window.authSystem.getUserRecipeCount();
+            const isPremium = window.authSystem.isPremiumMember();
+            if (!isPremium) {
+                alert(`免费用户最多只能保存${limits.maxRecipes}个配方。您当前已有${currentCount}个配方。\n\n升级为付费会员可保存无限配方。`);
+                if (confirm('是否升级为付费会员以保存无限配方？')) {
+                    window.location.href = 'payment.html?type=premium';
+                }
+                return;
+            }
+        }
+    }
+    
     const safety = SafetyEvaluator.evaluateSafety(recipe);
     if (safety.level === 'red' && !confirm('检测到超出安全上限：\n' + safety.message + '\n仍要保存吗？')) {
         return;
