@@ -129,7 +129,7 @@
 8. scenario-suggestions.js (defer)
 
 ### 4.2 全局变量依赖
-- ✅ `FORMULA_DATABASE`: 在 formula-suggestions.js 中定义
+- ✅ `FORMULA_DATABASE`: 在 formula-database.js 中定义（独立文件）
 - ✅ `AI_CONFIG`: 在 ai-service.js 中定义
 - ✅ `window.authSystem`: 在 auth.js 中导出
 - ✅ `getQuestionnaireData`: 在 questionnaire.js 中定义

@@ -92,7 +92,7 @@ callAI(messages, options)
 
 **调用位置**:
 - `formulas-page.js` - 渲染单个配方时
-- `formula-suggestions.js` - `generateAISuggestionTextAsync()` 函数
+- `formula-suggestions.js` - `generateAISuggestionTextAsync()` 函数（依赖 `formula-database.js`）
 
 **调用流程**:
 ```
@@ -225,6 +225,7 @@ formulas-page.js
   └── 依赖: formula-suggestions.js (generatePersonalizedSuggestions)
 
 formula-suggestions.js
+  ├── 依赖: formula-database.js (FORMULA_DATABASE)
   └── 依赖: ai-service.js (generateAIFormulaRecommendations, generateAISuggestionText)
 ```
 

@@ -114,6 +114,7 @@ if (typeof UnifiedDataManager !== 'undefined') {
 
 ### 新增文件
 - `unified-data-manager.js` - 统一数据管理模块
+- `formula-database.js` - 经典配方数据库（独立文件）
 - `DATA_ANALYSIS.md` - 数据分析报告
 - `IMPROVEMENTS.md` - 本文件
 
@@ -122,6 +123,8 @@ if (typeof UnifiedDataManager !== 'undefined') {
 - `formula-builder.html` - 添加 unified-data-manager.js 引用
 - `recipe-database.js` - 使用统一数据管理器
 - `recipe-database.html` - 添加 unified-data-manager.js 引用
+- `formula-suggestions.js` - 移除 FORMULA_DATABASE 定义，改为引用 formula-database.js
+- 所有使用 FORMULA_DATABASE 的 HTML 文件 - 添加 formula-database.js 引用
 
 ## 下一步建议
 

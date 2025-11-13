@@ -185,12 +185,13 @@ if (data && data.usage && data.usage.length > 0) {
 
 ### 问题1: "FORMULA_DATABASE is not available"
 
-**原因**: `formula-suggestions.js` 未加载或加载顺序错误
+**原因**: `formula-database.js` 或 `formula-suggestions.js` 未加载或加载顺序错误
 
 **解决**:
 1. 检查 `formulas.html` 中脚本加载顺序
-2. 确认 `formula-suggestions.js` 在 `ai-service.js` 之前加载
-3. 检查 Network 标签页，确认文件成功加载
+2. 确认 `formula-database.js` 在 `formula-suggestions.js` 之前加载
+3. 确认 `formula-suggestions.js` 在 `ai-service.js` 之前加载
+4. 检查 Network 标签页，确认文件成功加载
 
 ### 问题2: "AI_QUERY_REQUIRES_LOGIN"
 
@@ -205,9 +206,10 @@ if (data && data.usage && data.usage.length > 0) {
 **原因**: 选择的使用方式没有匹配的配方
 
 **解决**:
-1. 检查 `FORMULA_DATABASE` 中的配方
-2. 确认配方名称或副标题包含使用方式关键词（护手霜、身体乳等）
-3. 在控制台运行：
+1. 确认 `formula-database.js` 已正确加载
+2. 检查 `FORMULA_DATABASE` 中的配方
+3. 确认配方名称或副标题包含使用方式关键词（护手霜、身体乳等）
+4. 在控制台运行：
    ```javascript
    Object.values(FORMULA_DATABASE).forEach(f => {
        console.log(f.id, f.name, f.subtitle);

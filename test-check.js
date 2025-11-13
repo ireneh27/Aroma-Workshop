@@ -5,7 +5,7 @@ console.log('=== 芳疗方案网站 - 功能检查 ===\n');
 
 // 1. 检查关键变量
 console.log('1. 检查关键变量:');
-console.log('   FORMULA_DATABASE:', typeof FORMULA_DATABASE !== 'undefined' ? `✓ 已加载 (${Object.keys(FORMULA_DATABASE).length} 个配方)` : '✗ 未加载');
+console.log('   FORMULA_DATABASE:', typeof FORMULA_DATABASE !== 'undefined' ? `✓ 已加载 (${Object.keys(FORMULA_DATABASE).length} 个配方) [来自 formula-database.js]` : '✗ 未加载 (请确认 formula-database.js 已加载)');
 console.log('   AI_CONFIG:', typeof AI_CONFIG !== 'undefined' ? `✓ 已加载 (provider: ${AI_CONFIG.provider})` : '✗ 未加载');
 console.log('   getQuestionnaireData:', typeof getQuestionnaireData !== 'undefined' ? '✓ 已加载' : '✗ 未加载');
 console.log('   generateScenarioSuggestions:', typeof generateScenarioSuggestions !== 'undefined' ? '✓ 已加载' : '✗ 未加载');
@@ -49,6 +49,7 @@ if (typeof FORMULA_DATABASE !== 'undefined') {
 } else {
     console.log('3. 检查配方数据库:');
     console.log('   ✗ FORMULA_DATABASE 未加载');
+    console.log('   💡 提示: 请确认 formula-database.js 已正确加载');
 }
 console.log('');
 

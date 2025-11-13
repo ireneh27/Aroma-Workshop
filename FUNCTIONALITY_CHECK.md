@@ -65,7 +65,8 @@
 - ✅ `auth.js` - 用户认证
 - ✅ `auth-nav.js` - 导航认证
 - ✅ `ai-service.js` - AI服务
-- ✅ `formula-suggestions.js` - 配方建议
+- ✅ `formula-database.js` - 经典配方数据库（独立文件）
+- ✅ `formula-suggestions.js` - 配方建议（依赖 formula-database.js）
 - ✅ `scenario-suggestions.js` - 场景建议
 - ✅ `daily-usage-validator.js` - 每日用量验证
 - ✅ `formulas-page.js` - 页面逻辑
