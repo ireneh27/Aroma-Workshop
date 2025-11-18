@@ -60,16 +60,17 @@ function saveQuestionnaire() {
         return;
     }
     
-    // 检查是否可以创建/保存信息档案（免费用户只能保存1个）
-    if (typeof window.authSystem !== 'undefined' && window.authSystem.canCreateProfile) {
-        const canCreate = window.authSystem.canCreateProfile();
-        if (!canCreate) {
+    // 检查是否可以保存问卷答案（免费用户只能保存2个）
+    if (typeof window.authSystem !== 'undefined' && window.authSystem.canSaveQuestionnaire) {
+        const canSave = window.authSystem.canSaveQuestionnaire();
+        if (!canSave) {
             const limits = window.authSystem.getUserLimits();
+            const currentCount = window.authSystem.getUserQuestionnaireCount();
             const isPremium = window.authSystem.isPremiumMember();
             if (!isPremium) {
-                showQuestionnaireMessage(`免费用户只能保存${limits.maxProfiles}个信息档案。升级为付费会员可保存多个档案。`, 'error');
+                showQuestionnaireMessage(`免费用户只能保存${limits.maxQuestionnaires}个问卷答案。您当前已有${currentCount}个。升级为付费会员可保存无限问卷。`, 'error');
                 // 可以选择跳转到支付页面
-                if (confirm('是否升级为付费会员以保存多个信息档案？')) {
+                if (confirm('是否升级为付费会员以保存无限问卷答案？')) {
                     window.location.href = 'payment.html?type=premium';
                 }
                 return;
@@ -277,7 +278,7 @@ function submitQuestionnaire() {
     
     // 延迟跳转，让用户看到保存消息
     setTimeout(() => {
-        window.location.href = 'scenario-suggestions.html';
+        window.location.href = 'formulas.html';
     }, 500);
 }
 

@@ -471,23 +471,45 @@ function getUserLimits() {
     return USER_LIMITS[membershipType] || USER_LIMITS[MEMBERSHIP_TYPE.FREE];
 }
 
-// 检查是否可以创建新的信息档案
-function canCreateProfile() {
+// 检查是否可以保存新的问卷答案
+function canSaveQuestionnaire() {
     const limits = getUserLimits();
-    if (limits.maxProfiles === Infinity) return true;
-    
-    // 统计当前用户的信息档案数量
+    if (limits.maxQuestionnaires === Infinity) return true;
+
+    // 统计当前用户的问卷答案数量
     const user = getCurrentUser();
     if (!user) return false;
-    
-    const profileKey = `user_questionnaire_${user.id}`;
-    // 检查是否有已保存的档案
-    const existingProfile = localStorage.getItem(profileKey);
-    if (existingProfile) {
-        return limits.maxProfiles > 1; // 如果已有1个，且限制是1，则不能再创建
+
+    const questionnairesKey = `user_questionnaires_${user.id}`;
+    try {
+        const data = localStorage.getItem(questionnairesKey);
+        if (!data) return true; // 没有问卷，可以保存
+
+        const questionnaires = JSON.parse(data);
+        const currentCount = questionnaires.questionnaires ? questionnaires.questionnaires.length : 0;
+        return currentCount < limits.maxQuestionnaires;
+    } catch (e) {
+        console.error('Error checking questionnaire count:', e);
+        return true;
     }
-    
-    return true;
+}
+
+// 获取当前用户已保存的问卷数量
+function getUserQuestionnaireCount() {
+    const user = getCurrentUser();
+    if (!user) return 0;
+
+    const questionnairesKey = `user_questionnaires_${user.id}`;
+    try {
+        const data = localStorage.getItem(questionnairesKey);
+        if (!data) return 0;
+
+        const questionnaires = JSON.parse(data);
+        return questionnaires.questionnaires ? questionnaires.questionnaires.length : 0;
+    } catch (e) {
+        console.error('Error getting questionnaire count:', e);
+        return 0;
+    }
 }
 
 // 检查是否可以创建新配方
@@ -630,7 +652,8 @@ if (typeof window !== 'undefined') {
         getUserMembershipType,
         isPremiumMember,
         getUserLimits,
-        canCreateProfile,
+        canSaveQuestionnaire,
+        getUserQuestionnaireCount,
         canCreateRecipe,
         getUserRecipeCount,
         upgradeToPremium,
