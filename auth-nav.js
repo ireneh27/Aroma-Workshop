@@ -7,17 +7,12 @@ function updateNavAuthStatus() {
     
     const navLoginLink = document.getElementById('navLoginLink');
     const navUserInfo = document.getElementById('navUserInfo');
-    
-    const navMyFormulas = document.getElementById('navMyFormulas');
-    
+
     if (window.authSystem.isUserLoggedIn()) {
         const userInfo = window.authSystem.getUserInfo();
-        // 隐藏登录链接，显示用户信息和"我的配方库"链接
+        // 隐藏登录链接，显示用户信息
         if (navLoginLink) {
             navLoginLink.style.display = 'none';
-        }
-        if (navMyFormulas) {
-            navMyFormulas.style.display = 'inline-block';
         }
         if (navUserInfo) {
             navUserInfo.style.display = 'inline-flex';
@@ -27,12 +22,9 @@ function updateNavAuthStatus() {
             navUserInfo.title = `${userInfo.name || userInfo.email} (剩余${userInfo.remainingInquiries}次AI查询)`;
         }
     } else {
-        // 显示登录链接，隐藏用户信息和"我的配方库"链接
+        // 显示登录链接，隐藏用户信息
         if (navLoginLink) {
             navLoginLink.style.display = 'inline-block';
-        }
-        if (navMyFormulas) {
-            navMyFormulas.style.display = 'none';
         }
         if (navUserInfo) {
             navUserInfo.style.display = 'none';
