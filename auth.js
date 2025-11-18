@@ -16,12 +16,12 @@ const MEMBERSHIP_TYPE = {
 // 用户权限限制
 const USER_LIMITS = {
     [MEMBERSHIP_TYPE.FREE]: {
-        maxProfiles: 1,        // 最多1个信息档案
+        maxQuestionnaires: 2,  // 最多2个问卷答案
         maxRecipes: 10,        // 最多10个配方
         aiInquiriesLimit: 3    // 3次免费AI查询
     },
     [MEMBERSHIP_TYPE.PREMIUM]: {
-        maxProfiles: Infinity, // 无限信息档案
+        maxQuestionnaires: Infinity, // 无限问卷答案
         maxRecipes: Infinity,  // 无限配方
         aiInquiriesLimit: 30   // 30次AI查询（赠送）
     }
