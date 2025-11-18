@@ -294,6 +294,11 @@
             ✓ 问卷数据已保存
         </div>
 
+        <!-- Profile Selector (for logged-in users) -->
+        <div id="profileSelector" class="question-section" style="display: none; margin-bottom: var(--spacing-lg);">
+            <!-- 内容将由JavaScript动态生成 -->
+        </div>
+
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
         </div>
@@ -657,6 +662,11 @@
             updateLoginPrompt();
             // 监听用户状态变化
             setInterval(updateLoginPrompt, 2000);
+            
+            // 渲染档案选择器（如果用户已登录）
+            if (typeof renderProfileSelector === 'function') {
+                renderProfileSelector();
+            }
             
             const sidebarNav = document.getElementById('sidebarNav');
             const sidebarToggle = document.getElementById('sidebarToggle');

@@ -47,6 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add initial oil row
     addOilRow();
+    
+    // 初始化用户功能（统计、历史、场景建议历史）
+    initUserFeatures();
 });
 
 // Render inventory chips
@@ -1317,4 +1320,352 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ==================== User Statistics and History (from my-formulas.html) ====================
+
+// 渲染用户统计信息
+function renderUserStats() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return;
+    }
+    
+    const stats = window.authSystem.getUserStatistics();
+    const statsSection = document.getElementById('userStatsSection');
+    if (!statsSection) return;
+    
+    statsSection.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalHistory}</div>
+            <div class="stat-label">最近查看</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalAIInquiries}</div>
+            <div class="stat-label">AI查询次数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.remainingAIInquiries}</div>
+            <div class="stat-label">剩余查询次数</div>
+        </div>
+    `;
+    statsSection.style.display = 'grid';
+}
+
+// 渲染使用历史
+function renderHistory() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return;
+    }
+    
+    const history = window.authSystem.getUserHistory();
+    if (!Array.isArray(history)) {
+        return;
+    }
+    
+    const historySection = document.getElementById('historySection');
+    const historyContent = document.getElementById('historyContent');
+    const clearBtn = document.getElementById('clearHistoryBtn');
+    
+    if (!historySection || !historyContent) return;
+    
+    if (history.length === 0) {
+        historySection.style.display = 'none';
+        return;
+    }
+    
+    historySection.style.display = 'block';
+    
+    if (typeof FORMULA_DATABASE === 'undefined') {
+        historyContent.innerHTML = '<p style="color: var(--secondary-color);">配方数据库未加载</p>';
+        return;
+    }
+    
+    const formulas = history
+        .map(item => {
+            if (!item || !item.id) return null;
+            const formula = FORMULA_DATABASE[item.id];
+            if (formula) {
+                return { ...formula, viewedAt: item.timestamp };
+            }
+            return null;
+        })
+        .filter(f => f !== null && f !== undefined);
+    
+    if (formulas.length === 0) {
+        historyContent.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">⚠️</div>
+                <h3>历史记录中的配方已不存在</h3>
+                <p class="empty-state-text">某些配方可能已被移除或更新。</p>
+            </div>
+        `;
+        clearBtn.style.display = 'none';
+        return;
+    }
+    
+    clearBtn.style.display = 'block';
+    
+    // 使用卡片视图显示
+    historyContent.innerHTML = `
+        <div class="recipe-cards-view active" style="display: grid;">
+            ${formulas.map(formula => renderHistoryFormulaCard(formula)).join('')}
+        </div>
+    `;
+}
+
+// 渲染历史记录中的配方卡片
+function renderHistoryFormulaCard(formula) {
+    const baseType = getFormulaBaseType(formula);
+    const baseTypeMap = {
+        'handcream': '护手霜',
+        'bodylotion': '身体乳',
+        'footbath': '泡脚/泡澡',
+        'diffuser': '扩香',
+        'spray': '喷雾'
+    };
+    const baseTypeName = baseTypeMap[baseType] || '配方';
+    
+    return `
+        <a href="formula-detail.html?id=${formula.id}" class="recipe-card">
+            <div class="recipe-card-header">
+                <div class="recipe-card-title">
+                    <div class="recipe-card-name">${escapeHtml(formula.name || '未命名配方')}</div>
+                    <div class="recipe-card-meta">
+                        <div class="recipe-card-meta-item">
+                            <span>📅</span>
+                            <span>${new Date(formula.viewedAt || Date.now()).toLocaleDateString('zh-CN')}</span>
+                        </div>
+                        <div class="recipe-card-meta-item">
+                            <span>💧</span>
+                            <span>${baseTypeName}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${formula.subtitle ? `<div class="recipe-card-content"><div class="recipe-card-value">${escapeHtml(formula.subtitle)}</div></div>` : ''}
+        </a>
+    `;
+}
+
+// 获取配方介质类型（简化版）
+function getFormulaBaseType(formula) {
+    const name = (formula.name || '').toLowerCase();
+    const subtitle = (formula.subtitle || '').toLowerCase();
+    const text = name + ' ' + subtitle;
+    
+    if (text.includes('护手霜') || text.includes('handcream')) return 'handcream';
+    if (text.includes('身体乳') || text.includes('bodylotion')) return 'bodylotion';
+    if (text.includes('泡脚') || text.includes('泡澡') || text.includes('footbath')) return 'footbath';
+    if (text.includes('扩香') || text.includes('diffuser')) return 'diffuser';
+    if (text.includes('喷雾') || text.includes('spray')) return 'spray';
+    return 'handcream';
+}
+
+// 清空历史
+function clearHistory() {
+    if (!confirm('确定要清空所有查看历史吗？此操作不可恢复。')) {
+        return;
+    }
+    
+    if (typeof window.authSystem === 'undefined') return;
+    
+    const result = window.authSystem.clearHistory();
+    if (result.success) {
+        renderHistory();
+        alert(result.message);
+    }
+}
+
+// ==================== Scenario Suggestions History ====================
+
+// 保存场景建议到历史记录
+function saveScenarioSuggestion(scenarioData) {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return;
+    }
+    
+    const user = window.authSystem.getCurrentUser();
+    if (!user) return;
+    
+    const historyKey = `user_scenario_history_${user.id}`;
+    try {
+        let history = [];
+        const saved = localStorage.getItem(historyKey);
+        if (saved) {
+            history = JSON.parse(saved);
+        }
+        
+        // 添加新记录
+        history.unshift({
+            id: 'scenario_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            data: scenarioData,
+            timestamp: new Date().toISOString(),
+            profileName: getCurrentProfileName() || '默认档案'
+        });
+        
+        // 限制历史记录数量（最多保存20个）
+        if (history.length > 20) {
+            history = history.slice(0, 20);
+        }
+        
+        localStorage.setItem(historyKey, JSON.stringify(history));
+    } catch (e) {
+        console.error('Error saving scenario suggestion:', e);
+    }
+}
+
+// 获取当前使用的档案名称
+function getCurrentProfileName() {
+    // getUserProfiles is defined in questionnaire.js, check if it's available
+    if (typeof getUserProfiles === 'function') {
+        const profiles = getUserProfiles();
+        if (profiles && profiles.length > 0) {
+            // 创建副本以避免修改原数组，返回最新的档案名称
+            const sorted = [...profiles].sort((a, b) => {
+                const dateA = new Date(a.updatedAt || 0);
+                const dateB = new Date(b.updatedAt || 0);
+                return dateB - dateA;
+            });
+            const latest = sorted[0];
+            return latest && latest.name ? latest.name : null;
+        }
+    }
+    return null;
+}
+
+// 获取场景建议历史
+function getScenarioHistory() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return [];
+    }
+    
+    const user = window.authSystem.getCurrentUser();
+    if (!user) return [];
+    
+    const historyKey = `user_scenario_history_${user.id}`;
+    try {
+        const saved = localStorage.getItem(historyKey);
+        return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+        console.error('Error loading scenario history:', e);
+        return [];
+    }
+}
+
+// 渲染场景建议历史
+function renderScenarioHistory() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return;
+    }
+    
+    const history = getScenarioHistory();
+    if (!Array.isArray(history)) {
+        return;
+    }
+    
+    const scenarioSection = document.getElementById('scenarioHistorySection');
+    const scenarioContent = document.getElementById('scenarioHistoryContent');
+    
+    if (!scenarioSection || !scenarioContent) return;
+    
+    if (history.length === 0) {
+        scenarioSection.style.display = 'none';
+        return;
+    }
+    
+    scenarioSection.style.display = 'block';
+    
+    scenarioContent.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            ${history.map(item => renderScenarioHistoryCard(item)).join('')}
+        </div>
+    `;
+}
+
+// 渲染场景建议历史卡片
+function renderScenarioHistoryCard(item) {
+    if (!item || !item.id) {
+        return '';
+    }
+    
+    const scenarios = (item.data && item.data.scenarios && Array.isArray(item.data.scenarios)) ? item.data.scenarios : [];
+    const scenarioCount = scenarios.length;
+    const timestamp = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '未知时间';
+    
+    return `
+        <div class="recipe-card" style="cursor: pointer;" onclick="viewScenarioSuggestion('${escapeHtml(item.id)}')">
+            <div class="recipe-card-header">
+                <div class="recipe-card-title">
+                    <div class="recipe-card-name">${escapeHtml(item.profileName || '场景建议')}</div>
+                    <div class="recipe-card-meta">
+                        <div class="recipe-card-meta-item">
+                            <span>📅</span>
+                            <span>${timestamp}</span>
+                        </div>
+                        <div class="recipe-card-meta-item">
+                            <span>📋</span>
+                            <span>${scenarioCount} 个场景</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="recipe-card-content">
+                ${scenarios.map((scenario, idx) => `
+                    <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                        <strong>场景 ${idx + 1}: ${escapeHtml(scenario.name || '未命名')}</strong>
+                        <div style="font-size: 12px; color: var(--secondary-color); margin-top: 5px;">
+                            ${escapeHtml(scenario.description || '')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="recipe-card-actions">
+                <button class="btn btn-primary" onclick="event.stopPropagation(); viewScenarioSuggestion('${escapeHtml(item.id)}')">查看详情</button>
+            </div>
+        </div>
+    `;
+}
+
+// 查看场景建议详情
+window.viewScenarioSuggestion = function(scenarioId) {
+    if (!scenarioId) {
+        alert('场景ID无效');
+        return;
+    }
+    
+    const history = getScenarioHistory();
+    if (!Array.isArray(history)) {
+        alert('无法加载场景历史记录');
+        return;
+    }
+    
+    const item = history.find(h => h && h.id === scenarioId);
+    if (!item || !item.data) {
+        alert('场景建议不存在');
+        return;
+    }
+    
+    try {
+        // 保存场景数据到临时存储，供scenario-suggestions.html使用
+        sessionStorage.setItem('viewScenarioSuggestion', JSON.stringify(item.data));
+        window.location.href = 'scenario-suggestions.html?view=' + encodeURIComponent(scenarioId);
+    } catch (e) {
+        console.error('Error saving scenario to sessionStorage:', e);
+        alert('无法保存场景数据，请重试');
+    }
+};
+
+// 暴露保存函数到全局，供scenario-suggestions.js使用
+window.saveScenarioSuggestion = saveScenarioSuggestion;
+
+// 初始化用户相关功能
+function initUserFeatures() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        return;
+    }
+    
+    renderUserStats();
+    renderHistory();
+    renderScenarioHistory();
+}
+
 

@@ -1100,6 +1100,69 @@ async function loadScenarioSuggestions() {
             }
         };
         
+        // 检查是否要查看已保存的场景（从历史记录中）
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewScenarioId = urlParams.get('view');
+        
+        if (viewScenarioId) {
+            console.log('Loading saved scenario from history:', viewScenarioId);
+            updateLoadingMessage('正在加载已保存的场景建议...');
+            
+            try {
+                const savedScenarioData = sessionStorage.getItem('viewScenarioSuggestion');
+                if (savedScenarioData) {
+                    const scenarios = JSON.parse(savedScenarioData);
+                    console.log('Loaded saved scenario:', scenarios);
+                    
+                    // 验证数据格式
+                    if (scenarios && scenarios.scenarios && Array.isArray(scenarios.scenarios)) {
+                        // 直接渲染已保存的场景，不重新生成
+                        showLoading('正在渲染场景内容...', 90);
+                        renderScenarios(scenarios);
+                        renderQuickOverview(scenarios);
+                        
+                        // 显示视图切换按钮
+                        const viewModeToggle = document.getElementById('viewModeToggle');
+                        if (viewModeToggle) {
+                            viewModeToggle.style.display = 'flex';
+                        }
+                        
+                        // 检查是否需要显示首次使用引导
+                        checkAndShowOnboarding();
+                        
+                        // 完成加载
+                        showLoading('加载完成！', 100);
+                        setTimeout(() => {
+                            const container = document.getElementById('scenariosContainer');
+                            if (container) {
+                                const loadingState = container.querySelector('.loading-state');
+                                if (loadingState) {
+                                    loadingState.style.display = 'none';
+                                }
+                            }
+                        }, 500);
+                        
+                        // 清理sessionStorage（可选，保留以便刷新时仍能查看）
+                        // sessionStorage.removeItem('viewScenarioSuggestion');
+                        
+                        console.log('Saved scenario rendered successfully');
+                        return;
+                    } else {
+                        console.error('Invalid saved scenario data format');
+                        sessionStorage.removeItem('viewScenarioSuggestion');
+                        // 继续执行正常流程
+                    }
+                } else {
+                    console.error('No saved scenario data found in sessionStorage');
+                    // 继续执行正常流程
+                }
+            } catch (e) {
+                console.error('Error loading saved scenario:', e);
+                sessionStorage.removeItem('viewScenarioSuggestion');
+                // 继续执行正常流程
+            }
+        }
+        
         // 获取问卷数据
         updateLoadingMessage('正在读取您的健康档案...');
         console.log('Getting questionnaire data...');
@@ -1259,6 +1322,15 @@ async function loadScenarioSuggestions() {
                 '无法生成有效的场景建议。请尝试刷新页面或重新填写问卷。'
             );
             return;
+        }
+        
+        // 保存场景建议到历史记录（如果用户已登录）
+        if (typeof window.saveScenarioSuggestion === 'function' && window.authSystem && window.authSystem.isUserLoggedIn()) {
+            try {
+                window.saveScenarioSuggestion(scenarios);
+            } catch (e) {
+                console.error('Error saving scenario suggestion:', e);
+            }
         }
         
         // 渲染场景
