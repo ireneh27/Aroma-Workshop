@@ -28,23 +28,234 @@ function getAllAvailableOils() {
     ].sort();
 }
 
+// Check if user is logged in and show user-specific sections
+function checkLoginAndShowUserSections() {
+    if (typeof window.authSystem === 'undefined' || !window.authSystem.isUserLoggedIn()) {
+        // Hide user-specific sections for non-logged-in users
+        const userSections = document.getElementById('user-specific-sections');
+        if (userSections) {
+            userSections.style.display = 'none';
+        }
+        return false;
+    }
+
+    // Show user-specific sections for logged-in users
+    const userSections = document.getElementById('user-specific-sections');
+    if (userSections) {
+        userSections.style.display = 'block';
+    }
+
+    // Render user-specific content
+    renderUserStatistics();
+    renderViewingHistory();
+    renderScenarioHistory();
+
+    return true;
+}
+
+// Render user statistics
+function renderUserStatistics() {
+    if (typeof window.authSystem === 'undefined') return;
+
+    const statsContainer = document.getElementById('user-stats-cards');
+    if (!statsContainer) return;
+
+    const stats = window.authSystem.getUserStatistics();
+
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalHistory || 0}</div>
+            <div class="stat-label">最近查看</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.totalAIInquiries || 0}</div>
+            <div class="stat-label">AI查询次数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${stats.remainingAIInquiries || 0}</div>
+            <div class="stat-label">剩余查询次数</div>
+        </div>
+    `;
+}
+
+// Render viewing history
+function renderViewingHistory() {
+    if (typeof window.authSystem === 'undefined' || typeof FORMULA_DATABASE === 'undefined') return;
+
+    const historyContainer = document.getElementById('viewing-history-content');
+    const clearBtn = document.getElementById('clear-history-btn');
+    if (!historyContainer) return;
+
+    const history = window.authSystem.getUserHistory();
+
+    if (!history || history.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🕒</div>
+                <div class="empty-state-text">还没有查看记录</div>
+                <div class="empty-state-hint">查看配方详情时会自动记录到这里</div>
+            </div>
+        `;
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+    }
+
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    const formulas = history
+        .map(item => {
+            const formula = FORMULA_DATABASE[item.id];
+            if (formula) {
+                return { ...formula, viewedAt: item.timestamp };
+            }
+            return null;
+        })
+        .filter(f => f);
+
+    if (formulas.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">⚠️</div>
+                <div class="empty-state-text">历史记录中的配方已不存在</div>
+            </div>
+        `;
+        return;
+    }
+
+    historyContainer.innerHTML = `
+        <div class="viewing-history-grid">
+            ${formulas.map(formula => renderHistoryCard(formula)).join('')}
+        </div>
+    `;
+}
+
+// Render single history card
+function renderHistoryCard(formula) {
+    return `
+        <a href="formula-detail.html?id=${escapeHtml(formula.id)}" class="history-card">
+            <div class="history-card-name">${escapeHtml(formula.name || '未命名配方')}</div>
+            <div class="history-card-subtitle">${escapeHtml(formula.subtitle || '')}</div>
+            <div class="history-card-footer">查看详情 →</div>
+        </a>
+    `;
+}
+
+// Clear viewing history
+function clearViewingHistory() {
+    if (!confirm('确定要清空所有查看历史吗？此操作不可恢复。')) {
+        return;
+    }
+
+    if (typeof window.authSystem === 'undefined') return;
+
+    const result = window.authSystem.clearHistory();
+    if (result.success) {
+        renderViewingHistory();
+        showQuickMessage('已清空查看历史', 'success');
+    }
+}
+
+// Render scenario suggestions history
+function renderScenarioHistory() {
+    const historyContainer = document.getElementById('scenario-history-content');
+    if (!historyContainer) return;
+
+    // Get user's saved questionnaires with scenario suggestions
+    const user = typeof window.authSystem !== 'undefined' && window.authSystem.isUserLoggedIn()
+        ? window.authSystem.getCurrentUser()
+        : null;
+
+    if (!user) {
+        historyContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">🔒</div>
+                <div class="empty-state-text">请登录查看场景建议历史</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Load user's questionnaires
+    const questionnairesKey = `user_questionnaires_${user.id}`;
+    let questionnairesData = null;
+
+    try {
+        const data = localStorage.getItem(questionnairesKey);
+        if (data) {
+            questionnairesData = JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Error loading questionnaires:', e);
+    }
+
+    if (!questionnairesData || !questionnairesData.questionnaires || questionnairesData.questionnaires.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">💡</div>
+                <div class="empty-state-text">还没有保存的场景建议</div>
+                <div class="empty-state-hint">完成健康档案问卷后会自动生成场景建议</div>
+                <a href="health-profile.html" class="btn btn-primary" style="margin-top: var(--spacing-md);">填写健康档案</a>
+            </div>
+        `;
+        return;
+    }
+
+    // Render scenario cards
+    const scenarioCards = questionnairesData.questionnaires.map(q => renderScenarioCard(q)).join('');
+    historyContainer.innerHTML = scenarioCards;
+}
+
+// Render single scenario card
+function renderScenarioCard(questionnaire) {
+    const label = escapeHtml(questionnaire.label || '未命名方案');
+    const timestamp = questionnaire.timestamp ? new Date(questionnaire.timestamp).toLocaleString('zh-CN') : '';
+
+    return `
+        <div class="recipe-card">
+            <div class="recipe-card-header">
+                <div class="recipe-card-title">
+                    <div class="recipe-card-name">${label}</div>
+                    <div class="recipe-card-meta">
+                        <div class="recipe-card-meta-item">
+                            <span>📅</span>
+                            <span>${timestamp}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="recipe-card-content">
+                <div class="recipe-card-section">
+                    <div class="recipe-card-label">状态</div>
+                    <div class="recipe-card-value">场景建议已生成</div>
+                </div>
+            </div>
+            <div class="recipe-card-actions">
+                <a href="scenario-suggestions.html?qid=${escapeHtml(questionnaire.id)}" class="btn btn-primary">查看场景建议</a>
+            </div>
+        </div>
+    `;
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化统一数据管理器（如果可用）
     if (typeof UnifiedDataManager !== 'undefined') {
         UnifiedDataManager.init();
     }
-    
+
     // Load preset recipes if database is empty
     PresetRecipes.loadIntoDatabase();
-    
+
+    // Check login and show user-specific sections
+    checkLoginAndShowUserSections();
+
     // Initialize UI
     renderInventory();
     fillSelectOptions();
     initView(); // 初始化视图模式
     renderRecipeTable();
     updateCalculator();
-    
+
     // Add initial oil row
     addOilRow();
 });
