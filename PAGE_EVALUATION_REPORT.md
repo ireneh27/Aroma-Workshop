@@ -6,11 +6,33 @@
 
 ---
 
-## Executive Summary
+## ⚠️ IMPLEMENTATION NOTE (November 2025)
 
-**Recommendation:**
+**User Decision Override:**
+The original recommendations in this report were **reversed** based on user requirements:
+
+- ✅ **KEPT** `scenario-suggestions.html` (original recommendation was to remove)
+- ❌ **REMOVED** `my-formulas.html` (original recommendation was to keep)
+- ✅ **MERGED** my-formulas.html functionality into `recipe-database.html`
+
+**Implementation completed:** November 18, 2025
+
+**New User System:**
+- Free users can save 2 labeled questionnaires (changed from 1 profile)
+- recipe-database.html now shows for logged-in users:
+  - User statistics (AI queries used/remaining)
+  - Viewing history (recently viewed formulas)
+  - Scenario suggestions history (saved questionnaires)
+
+---
+
+## Original Executive Summary
+
+**Original Recommendation:**
 - ✅ **KEEP** `my-formulas.html` - Provides unique viewing history functionality
 - ❌ **REMOVE** `scenario-suggestions.html` - Completely redundant with `formulas.html`
+
+**Note:** This recommendation was not followed. See implementation note above.
 
 ---
 
