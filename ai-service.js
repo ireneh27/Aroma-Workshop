@@ -17,7 +17,7 @@ const AI_CONFIG = {
     
     // DeepSeek配置
     deepseek: {
-        apiKey: 'sk-5f6238c8a43741afa79a51dee16b6b27',
+        apiKey: '', // ⚠️ SECURITY: API Key must be configured via backend server, not in frontend code
         baseURL: 'https://api.deepseek.com/v1',
         model: 'deepseek-chat', // DeepSeek的主要模型
         temperature: 0.7,

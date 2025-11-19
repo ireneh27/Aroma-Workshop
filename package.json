@@ -1,0 +1,29 @@
+{
+  "name": "aroma-workshop",
+  "version": "1.0.0",
+  "description": "Aromatherapy Workshop Website",
+  "type": "module",
+  "scripts": {
+    "serve": "firebase serve",
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:firestore": "firebase deploy --only firestore:rules",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "aromatherapy",
+    "essential-oils",
+    "wellness"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  }
+}
+
+

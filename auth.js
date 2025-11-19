@@ -1,4 +1,10 @@
 // 用户认证和AI查询次数管理系统
+// ⚠️ SECURITY WARNING: This is a demo/prototype version.
+// ⚠️ DO NOT use in production without implementing proper security:
+//    - Passwords are stored in PLAIN TEXT (must use hashing)
+//    - All data stored in browser localStorage (vulnerable to XSS)
+//    - No server-side validation
+//    - Not suitable for public use without backend implementation
 // 使用localStorage存储用户数据（生产环境建议使用后端数据库）
 
 const AUTH_STORAGE_KEY = 'aromatherapy_users';

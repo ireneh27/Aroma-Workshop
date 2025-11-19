@@ -1288,7 +1288,7 @@ async function loadScenarioSuggestions() {
                         '• 请确保已填写健康状况问卷',
                         '• 配方数据库可能未正确加载',
                         '',
-                        '💡 提示：您可以先查看"您的定制芳疗体验"页面，那里有基于规则的配方推荐。'
+                        '💡 提示：您可以先查看"AI芳疗定制"页面，那里有基于规则的配方推荐。'
                     ]
                 );
                 return;
@@ -1324,8 +1324,8 @@ async function loadScenarioSuggestions() {
             return;
         }
         
-        // 保存场景建议到历史记录（如果用户已登录）
-        if (typeof window.saveScenarioSuggestion === 'function' && window.authSystem && window.authSystem.isUserLoggedIn()) {
+        // 保存场景建议到历史记录（如果用户已登录，且不是从历史记录查看的场景）
+        if (!viewScenarioId && typeof window.saveScenarioSuggestion === 'function' && window.authSystem && window.authSystem.isUserLoggedIn()) {
             try {
                 window.saveScenarioSuggestion(scenarios);
             } catch (e) {
