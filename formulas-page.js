@@ -369,9 +369,12 @@ function renderTimelineScenario(scenario) {
     }
     
     currentScenario = scenario;
-    const container = document.getElementById('personalizedTimeline');
+    const container = typeof window.DOMUtils !== 'undefined'
+        ? window.DOMUtils.getCachedElement('personalizedTimeline')
+        : document.getElementById('personalizedTimeline');
     if (!container) return;
     
+    // 使用优化的 DOM 操作：先构建 HTML 字符串，然后一次性设置
     let timelineHTML = `
         <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 30px;">
             <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid var(--accent-color);">
@@ -403,7 +406,12 @@ function renderTimelineScenario(scenario) {
         </div>
     `;
     
-    container.innerHTML = timelineHTML;
+    // 使用优化的 setHTML 方法
+    if (typeof window.DOMUtils !== 'undefined') {
+        window.DOMUtils.setHTML(container, timelineHTML);
+    } else {
+        container.innerHTML = timelineHTML;
+    }
     
     // 初始化拖拽和交互功能
     initTimelineInteractions();

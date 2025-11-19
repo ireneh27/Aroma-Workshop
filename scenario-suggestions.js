@@ -472,7 +472,11 @@ function mergeTimelines(scenarios) {
 
 // 渲染所有场景（优化版：使用分批渲染，减少阻塞）
 function renderScenarios(scenarios) {
-    const container = document.getElementById('scenariosContainer');
+    // 使用缓存的 DOM 查询
+    const container = typeof window.DOMUtils !== 'undefined' 
+        ? window.DOMUtils.getCachedElement('scenariosContainer')
+        : document.getElementById('scenariosContainer');
+    
     if (!container) {
         console.error('scenariosContainer not found');
         return;
@@ -481,27 +485,48 @@ function renderScenarios(scenarios) {
     console.log('Rendering scenarios:', scenarios);
     
     if (!scenarios || !scenarios.scenarios || scenarios.scenarios.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <h3>暂无场景建议</h3>
-                <p>请先完成健康状况问卷并选择使用方式。</p>
-                <a href="health-profile.html" class="btn btn-primary" style="margin-top: 20px; text-decoration: none; display: inline-block;">
-                    前往填写问卷
-                </a>
-            </div>
-        `;
+        if (typeof window.DOMUtils !== 'undefined') {
+            window.DOMUtils.setHTML(container, `
+                <div class="empty-state">
+                    <h3>暂无场景建议</h3>
+                    <p>请先完成健康状况问卷并选择使用方式。</p>
+                    <a href="health-profile.html" class="btn btn-primary" style="margin-top: 20px; text-decoration: none; display: inline-block;">
+                        前往填写问卷
+                    </a>
+                </div>
+            `);
+        } else {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>暂无场景建议</h3>
+                    <p>请先完成健康状况问卷并选择使用方式。</p>
+                    <a href="health-profile.html" class="btn btn-primary" style="margin-top: 20px; text-decoration: none; display: inline-block;">
+                        前往填写问卷
+                    </a>
+                </div>
+            `;
+        }
         return;
     }
     
     // 检查FORMULA_DATABASE是否可用
     if (typeof FORMULA_DATABASE === 'undefined' || !FORMULA_DATABASE || Object.keys(FORMULA_DATABASE).length === 0) {
         console.error('FORMULA_DATABASE is not available');
-        container.innerHTML = `
-            <div class="error-state">
-                <h3>数据加载错误</h3>
-                <p>配方数据库未加载，请刷新页面重试。</p>
-            </div>
-        `;
+        if (typeof window.DOMUtils !== 'undefined') {
+            window.DOMUtils.setHTML(container, `
+                <div class="error-state">
+                    <h3>数据加载错误</h3>
+                    <p>配方数据库未加载，请刷新页面重试。</p>
+                </div>
+            `);
+        } else {
+            container.innerHTML = `
+                <div class="error-state">
+                    <h3>数据加载错误</h3>
+                    <p>配方数据库未加载，请刷新页面重试。</p>
+                </div>
+            `;
+        }
         return;
     }
     
@@ -510,34 +535,59 @@ function renderScenarios(scenarios) {
     
     if (mergedTimeline.length === 0) {
         console.error('No timeline items found');
-        container.innerHTML = `
-            <div class="error-state">
-                <h3>场景渲染失败</h3>
-                <p>无法提取时间线数据，请检查场景数据格式。</p>
-            </div>
-        `;
+        if (typeof window.DOMUtils !== 'undefined') {
+            window.DOMUtils.setHTML(container, `
+                <div class="error-state">
+                    <h3>场景渲染失败</h3>
+                    <p>无法提取时间线数据，请检查场景数据格式。</p>
+                </div>
+            `);
+        } else {
+            container.innerHTML = `
+                <div class="error-state">
+                    <h3>场景渲染失败</h3>
+                    <p>无法提取时间线数据，请检查场景数据格式。</p>
+                </div>
+            `;
+        }
         return;
     }
     
-    // 先清空容器并显示骨架屏
-    container.innerHTML = '';
-    
-    // 创建布局容器
-    const layoutDiv = document.createElement('div');
-    layoutDiv.className = 'scenarios-layout';
-    container.appendChild(layoutDiv);
-    
-    // 保存场景数据供时间轴点击使用
-    window.scenarioData = scenarios;
-    
-    // 分批渲染：先渲染时间轴和基本结构
-    renderTimelineFirst(mergedTimeline, layoutDiv, scenarios);
+    // 使用优化的 DOM 操作
+    if (typeof window.DOMUtils !== 'undefined') {
+        // 清空容器
+        container.innerHTML = '';
+        
+        // 使用 createElement 创建布局容器
+        const layoutDiv = window.DOMUtils.createElement('div', {
+            className: 'scenarios-layout'
+        });
+        container.appendChild(layoutDiv);
+        
+        // 保存场景数据供时间轴点击使用
+        window.scenarioData = scenarios;
+        
+        // 分批渲染：先渲染时间轴和基本结构
+        renderTimelineFirst(mergedTimeline, layoutDiv, scenarios);
+    } else {
+        // 降级方案：使用原始方法
+        container.innerHTML = '';
+        const layoutDiv = document.createElement('div');
+        layoutDiv.className = 'scenarios-layout';
+        container.appendChild(layoutDiv);
+        window.scenarioData = scenarios;
+        renderTimelineFirst(mergedTimeline, layoutDiv, scenarios);
+    }
 }
 
-// 渲染快速概览
+// 渲染快速概览（优化版：使用 DocumentFragment）
 function renderQuickOverview(scenarios) {
-    const quickOverview = document.getElementById('quickOverview');
-    const overviewContent = document.getElementById('overviewContent');
+    const quickOverview = typeof window.DOMUtils !== 'undefined'
+        ? window.DOMUtils.getCachedElement('quickOverview')
+        : document.getElementById('quickOverview');
+    const overviewContent = typeof window.DOMUtils !== 'undefined'
+        ? window.DOMUtils.getCachedElement('overviewContent')
+        : document.getElementById('overviewContent');
     
     if (!quickOverview || !overviewContent || !scenarios || !scenarios.scenarios) {
         return;
@@ -570,51 +620,105 @@ function renderQuickOverview(scenarios) {
     totalTimePoints = timePoints.size;
     const uniqueFormulaCount = uniqueFormulas.size;
     
-    // 生成概览HTML
-    overviewContent.innerHTML = `
-        <div class="overview-item">
-            <div class="overview-value">${scenarios.scenarios.length}</div>
-            <div class="overview-label">场景数量</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${totalTimePoints}</div>
-            <div class="overview-label">时间点</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${uniqueFormulaCount}</div>
-            <div class="overview-label">配方种类</div>
-        </div>
-        <div class="overview-item">
-            <div class="overview-value">${totalFormulas}</div>
-            <div class="overview-label">配方总数</div>
-        </div>
-    `;
+    // 使用优化的 DOM 操作
+    if (typeof window.DOMUtils !== 'undefined') {
+        // 使用 createElementsBatch 批量创建元素
+        const overviewItems = [
+            { tag: 'div', attributes: { className: 'overview-item' }, children: [
+                { tag: 'div', attributes: { className: 'overview-value', textContent: scenarios.scenarios.length } },
+                { tag: 'div', attributes: { className: 'overview-label', textContent: '场景数量' } }
+            ]},
+            { tag: 'div', attributes: { className: 'overview-item' }, children: [
+                { tag: 'div', attributes: { className: 'overview-value', textContent: totalTimePoints } },
+                { tag: 'div', attributes: { className: 'overview-label', textContent: '时间点' } }
+            ]},
+            { tag: 'div', attributes: { className: 'overview-item' }, children: [
+                { tag: 'div', attributes: { className: 'overview-value', textContent: uniqueFormulaCount } },
+                { tag: 'div', attributes: { className: 'overview-label', textContent: '配方种类' } }
+            ]},
+            { tag: 'div', attributes: { className: 'overview-item' }, children: [
+                { tag: 'div', attributes: { className: 'overview-value', textContent: totalFormulas } },
+                { tag: 'div', attributes: { className: 'overview-label', textContent: '配方总数' } }
+            ]}
+        ];
+        
+        const fragment = window.DOMUtils.createElementsBatch(overviewItems);
+        overviewContent.innerHTML = '';
+        overviewContent.appendChild(fragment);
+    } else {
+        // 降级方案：使用 innerHTML
+        overviewContent.innerHTML = `
+            <div class="overview-item">
+                <div class="overview-value">${scenarios.scenarios.length}</div>
+                <div class="overview-label">场景数量</div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-value">${totalTimePoints}</div>
+                <div class="overview-label">时间点</div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-value">${uniqueFormulaCount}</div>
+                <div class="overview-label">配方种类</div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-value">${totalFormulas}</div>
+                <div class="overview-label">配方总数</div>
+            </div>
+        `;
+    }
     
     // 显示快速概览
     quickOverview.style.display = 'block';
 }
 
-// 先渲染时间轴（快速显示）
+// 先渲染时间轴（快速显示，优化版）
 function renderTimelineFirst(mergedTimeline, layoutDiv, scenarios) {
     // 渲染中间时间轴
     const timelineHTML = mergedTimeline.map((item, index) => renderTimelineNode(item, index)).join('');
-    const centralTimelineDiv = document.createElement('div');
-    centralTimelineDiv.className = 'central-timeline';
-    centralTimelineDiv.innerHTML = timelineHTML;
     
-    // 创建左右两侧的占位容器
-    const leftPlaceholder = document.createElement('div');
-    leftPlaceholder.className = 'scenario-side';
-    leftPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
-    
-    const rightPlaceholder = document.createElement('div');
-    rightPlaceholder.className = 'scenario-side';
-    rightPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
-    
-    // 添加到布局
-    layoutDiv.appendChild(leftPlaceholder);
-    layoutDiv.appendChild(centralTimelineDiv);
-    layoutDiv.appendChild(rightPlaceholder);
+    // 使用优化的 DOM 操作
+    if (typeof window.DOMUtils !== 'undefined') {
+        // 使用 createElement 创建元素
+        const centralTimelineDiv = window.DOMUtils.createElement('div', {
+            className: 'central-timeline',
+            innerHTML: timelineHTML
+        });
+        
+        // 创建左右两侧的占位容器
+        const loadingHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
+        const leftPlaceholder = window.DOMUtils.createElement('div', {
+            className: 'scenario-side',
+            innerHTML: loadingHTML
+        });
+        const rightPlaceholder = window.DOMUtils.createElement('div', {
+            className: 'scenario-side',
+            innerHTML: loadingHTML
+        });
+        
+        // 使用 DocumentFragment 批量添加
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(leftPlaceholder);
+        fragment.appendChild(centralTimelineDiv);
+        fragment.appendChild(rightPlaceholder);
+        layoutDiv.appendChild(fragment);
+    } else {
+        // 降级方案
+        const centralTimelineDiv = document.createElement('div');
+        centralTimelineDiv.className = 'central-timeline';
+        centralTimelineDiv.innerHTML = timelineHTML;
+        
+        const leftPlaceholder = document.createElement('div');
+        leftPlaceholder.className = 'scenario-side';
+        leftPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
+        
+        const rightPlaceholder = document.createElement('div');
+        rightPlaceholder.className = 'scenario-side';
+        rightPlaceholder.innerHTML = '<div class="scenario-side-header"><div class="loading-spinner" style="width: 30px; height: 30px; margin: 20px auto;"></div><p style="text-align: center; color: var(--secondary-color);">加载中...</p></div>';
+        
+        layoutDiv.appendChild(leftPlaceholder);
+        layoutDiv.appendChild(centralTimelineDiv);
+        layoutDiv.appendChild(rightPlaceholder);
+    }
     
     // 初始化时间轴点击功能（不依赖场景内容）
     requestAnimationFrame(() => {
