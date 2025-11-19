@@ -1,0 +1,64 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/README.md",
+      "**/DEPLOYMENT.md",
+      "**/FIREBASE_DEPLOYMENT.md",
+      "**/FIREBASE_QUICKSTART.md",
+      "**/HOSTING_ANALYSIS.md",
+      "**/INSTALL_FIREBASE.md",
+      "**/SECURITY_REPORT.md",
+      "**/*.md",
+      "**/deploy.sh",
+      "**/start-server.sh",
+      "**/test-website.sh",
+      "**/split_pages.py",
+      "**/.git/**",
+      "**/.vscode/**",
+      "**/.idea/**",
+      "**/package.json",
+      "**/package-lock.json",
+      "**/yarn.lock",
+      "**/Aroma-Workshop.code-workspace",
+      "**/AI_*.md",
+      "**/DATA_ANALYSIS.md",
+      "**/DESIGN_OPTIMIZATION.md",
+      "**/FEATURES.md",
+      "**/FUNCTIONALITY_CHECK.md",
+      "**/IMPROVEMENTS.md",
+      "**/LOCAL_TESTING.md",
+      "**/PAGE_OPTIMIZATION_SUMMARY.md",
+      "**/WEBSITE_CHECK_REPORT.md",
+      "**/WECHAT_SETUP.md",
+      "**/FORMULA_DATABASE_EXPORT.md",
+      "**/formula-numbering.md",
+      "**/精油配方数据库（html_单文件）.html",
+      "**/index_original_backup.html"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
+          }
+        ]
+      }
+    ]
+  }
+}
+
