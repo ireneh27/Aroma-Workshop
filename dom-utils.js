@@ -11,27 +11,39 @@ const domCache = new Map();
  * @returns {HTMLElement|null}
  */
 function getCachedElement(selector, useQuerySelector = false) {
+    if (!selector) return null;
+    
     const cacheKey = `${selector}_${useQuerySelector}`;
     
     if (domCache.has(cacheKey)) {
         const cached = domCache.get(cacheKey);
-        // 验证元素是否仍在 DOM 中
-        if (cached && document.contains(cached)) {
+        // 验证元素是否仍在 DOM 中（如果 document 已加载）
+        if (cached && (document.readyState === 'loading' || document.contains(cached))) {
             return cached;
         } else {
             domCache.delete(cacheKey);
         }
     }
     
-    const element = useQuerySelector 
-        ? document.querySelector(selector)
-        : document.getElementById(selector);
-    
-    if (element) {
-        domCache.set(cacheKey, element);
+    // 确保 document 已加载
+    if (typeof document === 'undefined' || !document.getElementById) {
+        return null;
     }
     
-    return element;
+    try {
+        const element = useQuerySelector 
+            ? document.querySelector(selector)
+            : document.getElementById(selector);
+        
+        if (element) {
+            domCache.set(cacheKey, element);
+        }
+        
+        return element;
+    } catch (e) {
+        console.warn('DOMUtils.getCachedElement error:', e);
+        return null;
+    }
 }
 
 /**
@@ -147,16 +159,49 @@ function createElement(tag, attributes = {}, children = []) {
  * @returns {DocumentFragment}
  */
 function createElementsBatch(configs) {
+    if (!Array.isArray(configs)) {
+        console.warn('createElementsBatch: configs must be an array');
+        return document.createDocumentFragment();
+    }
+    
     const fragment = document.createDocumentFragment();
     
-    configs.forEach(config => {
-        const element = createElement(
-            config.tag || 'div',
-            config.attributes || {},
-            config.children || []
-        );
-        fragment.appendChild(element);
-    });
+    try {
+        configs.forEach(config => {
+            if (!config || typeof config !== 'object') {
+                console.warn('createElementsBatch: invalid config', config);
+                return;
+            }
+            
+            // 处理 children：如果是配置对象数组，递归创建；如果是字符串，直接使用
+            let children = [];
+            if (config.children && Array.isArray(config.children)) {
+                children = config.children.map(child => {
+                    if (typeof child === 'string') {
+                        return child;
+                    } else if (child && typeof child === 'object' && child.tag) {
+                        return createElement(
+                            child.tag || 'div',
+                            child.attributes || {},
+                            child.children || []
+                        );
+                    } else if (child instanceof HTMLElement) {
+                        return child;
+                    }
+                    return null;
+                }).filter(c => c !== null);
+            }
+            
+            const element = createElement(
+                config.tag || 'div',
+                config.attributes || {},
+                children
+            );
+            fragment.appendChild(element);
+        });
+    } catch (e) {
+        console.error('createElementsBatch error:', e);
+    }
     
     return fragment;
 }
@@ -246,19 +291,30 @@ function replaceElement(oldElement, newContent) {
 }
 
 // 导出到全局（如果使用模块系统，可以改为 export）
-if (typeof window !== 'undefined') {
-    window.DOMUtils = {
-        getCachedElement,
-        clearDomCache,
-        batchAppend,
-        setHTML,
-        createElement,
-        createElementsBatch,
-        rafUpdate,
-        debounce,
-        throttle,
-        batchUpdate,
-        replaceElement
-    };
-}
+// 使用立即执行函数确保在 DOM 加载前也能初始化
+(function() {
+    try {
+        if (typeof window !== 'undefined') {
+            window.DOMUtils = {
+                getCachedElement,
+                clearDomCache,
+                batchAppend,
+                setHTML,
+                createElement,
+                createElementsBatch,
+                rafUpdate,
+                debounce,
+                throttle,
+                batchUpdate,
+                replaceElement
+            };
+        }
+    } catch (e) {
+        console.error('Failed to initialize DOMUtils:', e);
+        // 即使初始化失败，也要确保 window.DOMUtils 存在（但为空对象）
+        if (typeof window !== 'undefined') {
+            window.DOMUtils = {};
+        }
+    }
+})();
 

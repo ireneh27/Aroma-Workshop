@@ -407,8 +407,13 @@ function renderTimelineScenario(scenario) {
     `;
     
     // 使用优化的 setHTML 方法
-    if (typeof window.DOMUtils !== 'undefined') {
-        window.DOMUtils.setHTML(container, timelineHTML);
+    if (typeof window.DOMUtils !== 'undefined' && window.DOMUtils.setHTML) {
+        try {
+            window.DOMUtils.setHTML(container, timelineHTML);
+        } catch (e) {
+            console.warn('Failed to use DOMUtils.setHTML, falling back to innerHTML:', e);
+            container.innerHTML = timelineHTML;
+        }
     } else {
         container.innerHTML = timelineHTML;
     }
