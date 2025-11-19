@@ -1245,83 +1245,181 @@ async function loadScenarioSuggestions() {
     
     try {
         let scenarios = null;
+        let isUsingFallback = false;
         
-        // 尝试使用AI生成场景建议
-        if (typeof generateScenarioSuggestions !== 'undefined') {
-            // 调用AI生成场景建议（带进度提示）
-            updateLoadingMessage('正在生成个性化场景建议...');
-            showLoading('正在生成个性化场景建议...', 30);
-            console.log('Calling generateScenarioSuggestions with data:', questionnaireData);
+        // 优化策略：并行处理 - 先快速生成降级方案并显示，同时后台调用AI
+        // 这样可以立即显示内容，如果AI成功则替换为更好的结果
+        
+        // 1. 先快速生成降级方案（同步，很快）
+        updateLoadingMessage('正在快速生成场景建议...');
+        showLoading('正在快速生成场景建议...', 20);
+        
+        const fallbackScenarios = generateFallbackScenarios(questionnaireData);
+        
+        // 2. 如果降级方案可用，立即显示（让用户感觉很快）
+        if (fallbackScenarios && fallbackScenarios.scenarios && fallbackScenarios.scenarios.length > 0) {
+            console.log('Fallback scenarios generated, displaying immediately');
+            isUsingFallback = true;
+            scenarios = fallbackScenarios;
             
-            // 模拟进度更新（实际进度由AI调用决定）
-            const progressInterval = setInterval(() => {
-                const currentProgress = parseInt(document.querySelector('.loading-state p[style*="text-align: center"]')?.textContent?.replace('%', '') || '30');
-                if (currentProgress < 80) {
-                    showLoading('正在生成个性化场景建议...', Math.min(currentProgress + 5, 80));
-                }
-            }, 500);
+            // 立即渲染降级方案
+            showLoading('正在渲染场景内容...', 60);
+            renderScenarios(scenarios);
+            renderQuickOverview(scenarios);
             
-            try {
-                scenarios = await generateScenarioSuggestions(questionnaireData);
-            } catch (aiError) {
-                console.warn('AI生成失败，将使用降级方案:', aiError);
-                // 继续执行，使用降级方案
+            // 显示视图切换按钮
+            const viewModeToggle = document.getElementById('viewModeToggle');
+            if (viewModeToggle) {
+                viewModeToggle.style.display = 'flex';
             }
             
-            clearInterval(progressInterval);
-        }
-        
-        // 如果AI未启用或生成失败，使用降级方案
-        if (!scenarios) {
-            console.log('Using fallback scenario generation (rule-based)');
-            updateLoadingMessage('正在生成场景建议（基于规则）...');
-            showLoading('正在生成场景建议（基于规则）...', 50);
-            
-            scenarios = generateFallbackScenarios(questionnaireData);
-            
-            if (!scenarios || !scenarios.scenarios || scenarios.scenarios.length === 0) {
-                showError(
-                    '无法生成场景建议',
-                    [
-                        '可能的原因：',
-                        '• 请确保已选择至少一种使用方式',
-                        '• 请确保已填写健康状况问卷',
-                        '• 配方数据库可能未正确加载',
-                        '',
-                        '💡 提示：您可以先查看"AI芳疗定制"页面，那里有基于规则的配方推荐。'
-                    ]
-                );
-                return;
-            }
-            
-            // 显示降级提示
+            // 隐藏加载状态，显示内容
             setTimeout(() => {
                 const container = document.getElementById('scenariosContainer');
-                if (container && typeof generateScenarioSuggestions === 'undefined') {
-                    const notice = document.createElement('div');
-                    notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;';
+                if (container) {
+                    const loadingState = container.querySelector('.loading-state');
+                    if (loadingState) {
+                        loadingState.style.display = 'none';
+                    }
+                }
+            }, 300);
+            
+            // 显示提示：正在后台优化
+            const container = document.getElementById('scenariosContainer');
+            if (container) {
+                const notice = document.createElement('div');
+                notice.id = 'aiOptimizationNotice';
+                notice.style.cssText = 'background: #e3f2fd; border: 2px solid #2196f3; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;';
+                notice.innerHTML = `
+                    <span style="font-size: 18px;">⚡</span>
+                    <div style="flex: 1;">
+                        <strong style="color: #1976d2;">正在后台优化建议...</strong>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">AI正在为您生成更个性化的方案，完成后将自动更新</p>
+                    </div>
+                `;
+                container.insertBefore(notice, container.firstChild);
+            }
+        } else {
+            // 降级方案生成失败，显示错误
+            showError(
+                '无法生成场景建议',
+                [
+                    '可能的原因：',
+                    '• 请确保已选择至少一种使用方式',
+                    '• 请确保已填写健康状况问卷',
+                    '• 配方数据库可能未正确加载',
+                    '',
+                    '💡 提示：您可以先查看"AI芳疗定制"页面，那里有基于规则的配方推荐。'
+                ]
+            );
+            return;
+        }
+        
+        // 3. 并行：后台尝试使用AI生成更好的场景建议（如果可用）
+        if (typeof generateScenarioSuggestions !== 'undefined') {
+            console.log('Starting AI generation in background...');
+            
+            // 使用 Promise.race 设置超时，避免等待太久
+            const aiPromise = generateScenarioSuggestions(questionnaireData);
+            const timeoutPromise = new Promise((resolve) => {
+                setTimeout(() => resolve(null), 15000); // 15秒超时
+            });
+            
+            try {
+                const aiScenarios = await Promise.race([aiPromise, timeoutPromise]);
+                
+                if (aiScenarios && aiScenarios.scenarios && aiScenarios.scenarios.length > 0) {
+                    console.log('AI scenarios generated successfully, replacing fallback');
+                    
+                    // AI生成成功，替换为AI结果
+                    scenarios = aiScenarios;
+                    isUsingFallback = false;
+                    
+                    // 移除优化提示
+                    const notice = document.getElementById('aiOptimizationNotice');
+                    if (notice) {
+                        notice.style.cssText = 'background: #e8f5e9; border: 2px solid #4caf50; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;';
+                        notice.innerHTML = `
+                            <span style="font-size: 18px;">✨</span>
+                            <div style="flex: 1;">
+                                <strong style="color: #2e7d32;">AI优化完成！</strong>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">已为您生成更个性化的方案</p>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            if (notice) notice.style.display = 'none';
+                        }, 3000);
+                    }
+                    
+                    // 重新渲染AI生成的场景
+                    const container = document.getElementById('scenariosContainer');
+                    if (container) {
+                        // 清除旧内容（保留视图切换按钮）
+                        const layout = container.querySelector('.scenarios-layout');
+                        if (layout) layout.remove();
+                        const overview = document.getElementById('quickOverview');
+                        if (overview) overview.style.display = 'none';
+                    }
+                    
+                    renderScenarios(scenarios);
+                    renderQuickOverview(scenarios);
+                    
+                    // 显示视图切换按钮
+                    const viewModeToggle = document.getElementById('viewModeToggle');
+                    if (viewModeToggle) {
+                        viewModeToggle.style.display = 'flex';
+                    }
+                } else {
+                    console.log('AI generation failed or timed out, keeping fallback');
+                    // AI生成失败或超时，保持使用降级方案
+                    if (isUsingFallback) {
+                        const notice = document.getElementById('aiOptimizationNotice');
+                        if (notice) {
+                            notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;';
+                            notice.innerHTML = `
+                                <span style="font-size: 18px;">ℹ️</span>
+                                <div style="flex: 1;">
+                                    <strong style="color: #856404;">使用基于规则的场景建议</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">AI功能暂时不可用，已为您生成基于规则的方案</p>
+                                </div>
+                            `;
+                            setTimeout(() => {
+                                if (notice) notice.style.display = 'none';
+                            }, 5000);
+                        }
+                    }
+                }
+            } catch (aiError) {
+                console.warn('AI生成失败，保持使用降级方案:', aiError);
+                // AI生成失败，保持使用降级方案
+                if (isUsingFallback) {
+                    const notice = document.getElementById('aiOptimizationNotice');
+                    if (notice) {
+                        notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px;';
+                        notice.innerHTML = `
+                            <p style="color: #856404; margin: 0;">
+                                ⚠️ AI功能暂时不可用，已为您生成基于规则的场景建议。
+                            </p>
+                        `;
+                        setTimeout(() => {
+                            if (notice) notice.style.display = 'none';
+                        }, 5000);
+                    }
+                }
+            }
+        } else {
+            // AI功能未启用
+            if (isUsingFallback) {
+                const notice = document.getElementById('aiOptimizationNotice');
+                if (notice) {
+                    notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px;';
                     notice.innerHTML = `
                         <p style="color: #856404; margin: 0;">
                             ⚠️ AI功能未启用，已为您生成基于规则的简化场景建议。
-                            <button onclick="location.reload()" style="margin-left: 10px; padding: 6px 12px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">刷新</button>
                         </p>
                     `;
-                    container.insertBefore(notice, container.firstChild);
                 }
-            }, 100);
-        }
-        
-        showLoading('正在渲染场景内容...', 90);
-        
-        console.log('Received scenarios:', scenarios);
-        
-        if (!scenarios || !scenarios.scenarios || scenarios.scenarios.length === 0) {
-            console.error('Scenarios array is empty');
-            showError(
-                '场景数据为空',
-                '无法生成有效的场景建议。请尝试刷新页面或重新填写问卷。'
-            );
-            return;
+            }
         }
         
         // 保存场景建议到历史记录（如果用户已登录，且不是从历史记录查看的场景）
@@ -1333,37 +1431,13 @@ async function loadScenarioSuggestions() {
             }
         }
         
-        // 渲染场景
-        const renderStartTime = performance.now();
-        renderScenarios(scenarios);
-        
-        // 渲染快速概览
-        renderQuickOverview(scenarios);
-        
-        // 显示视图切换按钮
-        const viewModeToggle = document.getElementById('viewModeToggle');
-        if (viewModeToggle) {
-            viewModeToggle.style.display = 'flex';
+        // 检查是否需要显示首次使用引导（只在首次渲染时检查）
+        if (!isUsingFallback || typeof generateScenarioSuggestions === 'undefined') {
+            checkAndShowOnboarding();
         }
         
-        // 检查是否需要显示首次使用引导
-        checkAndShowOnboarding();
-        
-        const renderTime = performance.now() - renderStartTime;
         const totalTime = performance.now() - startTime;
-        console.log(`场景渲染完成 - 渲染耗时: ${renderTime.toFixed(2)}ms, 总耗时: ${totalTime.toFixed(2)}ms`);
-        
-        // 完成加载
-        showLoading('加载完成！', 100);
-        setTimeout(() => {
-            const container = document.getElementById('scenariosContainer');
-            if (container) {
-                const loadingState = container.querySelector('.loading-state');
-                if (loadingState) {
-                    loadingState.style.display = 'none';
-                }
-            }
-        }, 500);
+        console.log(`场景加载完成 - 总耗时: ${totalTime.toFixed(2)}ms, 使用${isUsingFallback ? '降级' : 'AI'}方案`);
     } catch (error) {
         console.error('Error loading scenario suggestions:', error);
         console.error('Error stack:', error.stack);
@@ -1383,7 +1457,7 @@ async function loadScenarioSuggestions() {
 }
 
 // 等待依赖加载完成（优化版：减少等待时间，提前显示内容）
-function waitForDependencies(callback, maxWaitTime = 5000) {
+function waitForDependencies(callback, maxWaitTime = 3000) {
     const startTime = Date.now();
     const checkInterval = 50; // 检查间隔50ms
     
@@ -1397,28 +1471,9 @@ function waitForDependencies(callback, maxWaitTime = 5000) {
         
         if (basicReady) {
             clearInterval(checkBasicDependencies);
-            // 基本依赖已加载，可以提前显示一些内容或开始准备
-            console.log('Basic dependencies loaded');
-            
-            // 继续等待AI相关依赖，但减少等待时间（AI是可选的，有降级方案）
-            let aiCheckCount = 0;
-            const maxAIChecks = Math.min(20, Math.floor((maxWaitTime - (Date.now() - startTime)) / checkInterval)); // 最多等待1秒
-            const checkAIDependencies = setInterval(() => {
-                const elapsed = Date.now() - startTime;
-                const allReady = typeof window.generateScenarioSuggestions !== 'undefined';
-                
-                if (allReady) {
-                    clearInterval(checkAIDependencies);
-                    console.log('All dependencies loaded, starting scenario suggestions');
-                    callback();
-                } else if (elapsed >= 1000 || aiCheckCount >= maxAIChecks) {
-                    // AI是可选的，即使未加载也继续执行（会使用降级方案）
-                    clearInterval(checkAIDependencies);
-                    console.log('AI dependencies not loaded, continuing with fallback scenario generation');
-                    callback();
-                }
-                aiCheckCount++;
-            }, checkInterval);
+            // 基本依赖已加载，立即执行回调（不等待AI）
+            console.log('Basic dependencies loaded, starting immediately');
+            callback();
         } else if (Date.now() - startTime >= maxWaitTime) {
             clearInterval(checkBasicDependencies);
             console.error('Basic dependencies not loaded after', maxWaitTime, 'ms');

@@ -4,6 +4,8 @@
 // 配置AI API
 const AI_CONFIG = {
     // 选择使用的AI服务: 'openai', 'anthropic', 'deepseek', 'custom', 'none'
+    // 可用的替代方案: OpenAI, Anthropic Claude, 百川智能, 硅基流动, Google Gemini 等
+    // 详细说明请参考: AI_API_ALTERNATIVES.md
     provider: 'deepseek', // 已配置为使用DeepSeek API
     
     // OpenAI配置
